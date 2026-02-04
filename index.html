@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badminton Court Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .form-section label {
+            display: block;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .day-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .day-button {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            background: #f7fafc;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .day-button:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .day-button.selected {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .day-button .day-name {
+            font-weight: 600;
+            display: block;
+            font-size: 0.9em;
+        }
+
+        .day-button .day-date {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .input-field label {
+            font-size: 0.85em;
+            margin-bottom: 5px;
+        }
+
+        input, select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-button:active {
+            transform: translateY(0);
+        }
+
+        .search-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .facility-result {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .facility-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .facility-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .facility-link {
+            background: #667eea;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .facility-link:hover {
+            background: #5568d3;
+        }
+
+        .date-group {
+            margin-bottom: 12px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .date-header {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .slot {
+            display: inline-block;
+            padding: 6px 12px;
+            background: #e6ffed;
+            color: #22543d;
+            border-radius: 4px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+
+        .no-results-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .info-text {
+            font-size: 0.85em;
+            color: #718096;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🏸 Badminton Court Finder</h1>
+            <p class="subtitle">Find available courts across Cambridge facilities</p>
+
+            <div class="form-section">
+                <label>Select days you're available:</label>
+                <div class="day-selector" id="daySelector"></div>
+            </div>
+
+            <div class="form-section">
+                <label>Time range:</label>
+                <div class="input-group">
+                    <div class="input-field">
+                        <label for="startTime">Start time</label>
+                        <input type="time" id="startTime" value="18:00">
+                    </div>
+                    <div class="input-field">
+                        <label for="endTime">End time</label>
+                        <input type="time" id="endTime" value="22:00">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <div class="input-group">
+                    <div class="input-field">
+                        <label for="duration">Duration needed</label>
+                        <select id="duration">
+                            <option value="1">1 hour</option>
+                            <option value="1.5">1.5 hours</option>
+                            <option value="2" selected>2 hours</option>
+                            <option value="2.5">2.5 hours</option>
+                            <option value="3">3 hours</option>
+                        </select>
+                        <span class="info-text">Minimum continuous block needed</span>
+                    </div>
+                    <div class="input-field">
+                        <label for="numCourts">Number of courts</label>
+                        <select id="numCourts">
+                            <option value="1" selected>1 court</option>
+                            <option value="2">2 courts</option>
+                            <option value="3">3 courts</option>
+                            <option value="4">4 courts</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button class="search-button" onclick="searchAvailability()">
+                Find Available Courts
+            </button>
+        </div>
+
+        <div id="resultsContainer"></div>
+    </div>
+
+    <script>
+        // Configuration - UPDATE THIS WITH YOUR RENDER URL
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : 'https://your-app-name.onrender.com'; // TODO: Update with your Render URL
+
+        const FACILITY_BOOKING_URLS = {
+            'Linton Village College': 'https://clubspark.lta.org.uk/LintonVillageCampus/Booking/BookByDate#?date=' + new Date().toISOString().split('T')[0] + '&role=guest'
+        };
+
+        // Initialize day selector
+        function initializeDaySelector() {
+            const container = document.getElementById('daySelector');
+            const days = [];
+            
+            for (let i = 0; i < 14; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                days.push(date);
+            }
+
+            container.innerHTML = days.map(date => {
+                const dateStr = date.toISOString().split('T')[0];
+                const dayName = date.toLocaleDateString('en-GB', { weekday: 'short' });
+                const dayDate = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                
+                return `
+                    <div class="day-button" data-date="${dateStr}" onclick="toggleDay(this)">
+                        <span class="day-name">${dayName}</span>
+                        <span class="day-date">${dayDate}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function toggleDay(element) {
+            element.classList.toggle('selected');
+        }
+
+        function getSelectedDays() {
+            const selected = document.querySelectorAll('.day-button.selected');
+            return Array.from(selected).map(el => el.dataset.date);
+        }
+
+        async function searchAvailability() {
+            const selectedDays = getSelectedDays();
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const duration = parseFloat(document.getElementById('duration').value);
+            const numCourts = parseInt(document.getElementById('numCourts').value);
+
+            // Validation
+            if (selectedDays.length === 0) {
+                alert('Please select at least one day');
+                return;
+            }
+
+            if (!startTime || !endTime) {
+                alert('Please select start and end times');
+                return;
+            }
+
+            // Show loading
+            const resultsContainer = document.getElementById('resultsContainer');
+            resultsContainer.innerHTML = `
+                <div class="card loading">
+                    <div class="spinner"></div>
+                    <p>Searching for available courts...</p>
+                </div>
+            `;
+
+            try {
+                // Get list of facilities
+                const facilitiesResponse = await fetch(`${API_URL}/api/facilities`);
+                const facilitiesData = await facilitiesResponse.json();
+                const facilities = facilitiesData.facilities || [];
+
+                // Query each facility for each selected day
+                const results = {};
+                
+                for (const facility of facilities) {
+                    results[facility] = {};
+                    
+                    for (const date of selectedDays) {
+                        try {
+                            const url = `${API_URL}/api/availability?facility=${encodeURIComponent(facility)}&date=${date}&start_time=${startTime}&end_time=${endTime}`;
+                            const response = await fetch(url);
+                            const data = await response.json();
+                            
+                            if (data.data && data.data.length > 0) {
+                                // Filter for continuous blocks matching duration
+                                const validSlots = findContinuousBlocks(data.data, duration, numCourts);
+                                if (validSlots.length > 0) {
+                                    results[facility][date] = validSlots;
+                                }
+                            }
+                        } catch (error) {
+                            console.error(`Error fetching ${facility} for ${date}:`, error);
+                        }
+                    }
+                }
+
+                displayResults(results);
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = `
+                    <div class="card">
+                        <div class="error">
+                            Error searching for courts. Please check that the API is running and try again.
+                            <br><br>
+                            <small>Error: ${error.message}</small>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function findContinuousBlocks(slots, requiredDuration, numCourts) {
+            // Group by court
+            const courtSlots = {};
+            slots.forEach(slot => {
+                const court = slot.court_number || 'Unknown';
+                if (!courtSlots[court]) {
+                    courtSlots[court] = [];
+                }
+                courtSlots[court].push(slot);
+            });
+
+            // Find continuous blocks in each court
+            const validBlocks = [];
+            
+            for (const [court, courtSlotList] of Object.entries(courtSlots)) {
+                courtSlotList.sort((a, b) => a.start_time.localeCompare(b.start_time));
+                
+                for (let i = 0; i < courtSlotList.length; i++) {
+                    let currentBlock = [courtSlotList[i]];
+                    let totalDuration = calculateDuration(courtSlotList[i].start_time, courtSlotList[i].end_time);
+                    
+                    // Try to extend the block
+                    for (let j = i + 1; j < courtSlotList.length; j++) {
+                        if (courtSlotList[j].start_time === currentBlock[currentBlock.length - 1].end_time) {
+                            currentBlock.push(courtSlotList[j]);
+                            totalDuration = calculateDuration(currentBlock[0].start_time, courtSlotList[j].end_time);
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    if (totalDuration >= requiredDuration) {
+                        validBlocks.push({
+                            court,
+                            start_time: currentBlock[0].start_time,
+                            end_time: currentBlock[currentBlock.length - 1].end_time,
+                            duration: totalDuration
+                        });
+                    }
+                }
+            }
+
+            return validBlocks;
+        }
+
+        function calculateDuration(startTime, endTime) {
+            const [startHour, startMin] = startTime.split(':').map(Number);
+            const [endHour, endMin] = endTime.split(':').map(Number);
+            return (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
+        }
+
+        function displayResults(results) {
+            const resultsContainer = document.getElementById('resultsContainer');
+            const facilitiesWithResults = Object.entries(results).filter(([_, dates]) => 
+                Object.keys(dates).length > 0
+            );
+
+            if (facilitiesWithResults.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div class="card no-results">
+                        <div class="no-results-icon">😔</div>
+                        <h2>No courts found</h2>
+                        <p>Try adjusting your search criteria:</p>
+                        <ul style="text-align: left; max-width: 400px; margin: 20px auto;">
+                            <li>Select more days</li>
+                            <li>Expand your time range</li>
+                            <li>Reduce the duration needed</li>
+                            <li>Reduce the number of courts</li>
+                        </ul>
+                    </div>
+                `;
+                return;
+            }
+
+            resultsContainer.innerHTML = `
+                <div class="card">
+                    <h2 style="margin-bottom: 20px;">Available Courts (${facilitiesWithResults.length} ${facilitiesWithResults.length === 1 ? 'facility' : 'facilities'})</h2>
+                    <div class="results">
+                        ${facilitiesWithResults.map(([facility, dates]) => `
+                            <div class="facility-result">
+                                <div class="facility-header">
+                                    <div class="facility-name">${facility}</div>
+                                    <a href="${FACILITY_BOOKING_URLS[facility] || '#'}" 
+                                       target="_blank" 
+                                       class="facility-link">
+                                        Book Now →
+                                    </a>
+                                </div>
+                                ${Object.entries(dates).map(([date, slots]) => {
+                                    const dateObj = new Date(date);
+                                    const dateStr = dateObj.toLocaleDateString('en-GB', { 
+                                        weekday: 'long', 
+                                        year: 'numeric', 
+                                        month: 'long', 
+                                        day: 'numeric' 
+                                    });
+                                    return `
+                                        <div class="date-group">
+                                            <div class="date-header">${dateStr}</div>
+                                            ${slots.map(slot => `
+                                                <span class="slot">
+                                                    ${slot.court} | ${slot.start_time} - ${slot.end_time} (${slot.duration.toFixed(1)}h)
+                                                </span>
+                                            `).join('')}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize on load
+        initializeDaySelector();
+    </script>
+</body>
+</html>

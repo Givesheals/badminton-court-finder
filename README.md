@@ -1,6 +1,8 @@
 # Badminton Court Finder
 
-A web tool to find available badminton courts in Cambridge by aggregating availability from multiple sports facilities.
+A web app to find available badminton courts in Cambridge by aggregating availability from multiple sports facilities.
+
+**Live Demo**: [https://givesheals.github.io/badminton-court-finder/](https://givesheals.github.io/badminton-court-finder/) *(update after deployment)*
 
 ## Features
 
@@ -77,15 +79,27 @@ Environment variables:
 
 ## Deployment
 
-### DigitalOcean App Platform
+### Backend (Render)
 
 1. Push code to GitHub
-2. Create new app in DigitalOcean
-3. Connect GitHub repository
-4. Use `app.yaml` configuration
-5. Set environment variables (secrets) in DigitalOcean dashboard
+2. Sign up at https://render.com/ (use GitHub login)
+3. Create new Web Service from your repository
+4. Select Docker runtime
+5. Set environment variables in Render dashboard
+6. Deploy (auto-builds from Dockerfile)
 
-### Docker
+See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for detailed steps.
+
+### Frontend (GitHub Pages)
+
+1. Update API URL in `index.html` with your Render URL
+2. Push to GitHub
+3. Enable GitHub Pages in repository Settings → Pages
+4. Select main branch, root folder
+
+Your site will be live at: `https://[username].github.io/badminton-court-finder/`
+
+### Docker (Local Testing)
 
 ```bash
 docker build -t badminton-court-finder .
@@ -104,14 +118,15 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 
 ```
 .
-├── app.py                 # Flask API
+├── index.html             # Frontend UI (GitHub Pages)
+├── app.py                 # Flask API (Render)
 ├── scraper_manager.py     # Scraper with rate limiting
 ├── database.py            # Database models
 ├── scrapers/              # Facility-specific scrapers
 │   └── linton_village_college.py
 ├── Dockerfile             # Docker configuration
-├── app.yaml              # DigitalOcean config
-└── requirements.txt      # Python dependencies
+├── requirements.txt       # Python dependencies
+└── DEPLOY_INSTRUCTIONS.md # Deployment guide
 ```
 
 ## Adding New Facilities

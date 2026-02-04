@@ -1,6 +1,6 @@
 # Step-by-Step Deployment Instructions
 
-## Part 1: Push Code to GitHub
+## Part 1: Deploy Backend API to Render
 
 ### Step 1: Open Terminal
 1. On your Mac, press `Command + Space` to open Spotlight
@@ -27,19 +27,18 @@ You should see: `/Users/simon.parker/Developer/badminton-court-finder`
 
 If you see something different, repeat Step 2.
 
-### Step 4: Check Git Status
-Type this command and press Enter:
+### Step 4: Push Code to GitHub
+First, check if you have uncommitted changes:
 
 ```bash
 git status
 ```
 
-You should see "Your branch is ahead of 'origin/main' by 1 commit" or similar. This means you have code ready to push.
-
-### Step 5: Push to GitHub
-Type this command and press Enter:
+If there are changes, commit and push them:
 
 ```bash
+git add .
+git commit -m "Add frontend and update deployment docs"
 git push origin main
 ```
 
@@ -52,151 +51,144 @@ git push origin main
 
 ---
 
-## Part 2: Deploy to DigitalOcean
+## Part 2: Deploy Backend to Render
 
-### Step 1: Create/Login to DigitalOcean Account
+### Step 1: Create/Login to Render Account
 1. Open your web browser
-2. Go to: https://www.digitalocean.com/
-3. Click "Sign Up" (if new) or "Log In" (if you have an account)
-4. Complete signup/login process
+2. Go to: https://render.com/
+3. Click "Get Started" (if new) or "Log In" (if you have an account)
+4. **Recommended**: Sign up with GitHub for easy integration
 
-### Step 2: Create a New App
-1. Once logged in, look for "Apps" in the left sidebar menu
-2. Click on "Apps"
-3. Click the big blue button that says "Create App"
+### Step 2: Create a New Web Service
+1. Once logged in, click **"New +"** button (top right)
+2. Select **"Web Service"**
 
-### Step 3: Connect GitHub
-1. You'll see options to connect a source - choose **"GitHub"**
-2. If this is your first time, click "Authorize DigitalOcean" 
-3. You'll be redirected to GitHub to authorize
-4. Click "Authorize DigitalOcean" on GitHub
-5. You'll be redirected back to DigitalOcean
+### Step 3: Connect GitHub Repository
+1. If first time, click **"Connect GitHub"**
+2. Authorize Render to access your repositories
+3. Find and select: **"badminton-court-finder"**
+4. Click **"Connect"**
 
-### Step 4: Select Your Repository
-1. You should now see a list of your GitHub repositories
-2. Find and click on: **"badminton-court-finder"**
-3. Make sure the branch says **"main"** (it should by default)
-4. Click "Next" button at the bottom
+### Step 4: Configure the Web Service
 
-### Step 5: Configure the App
-DigitalOcean should automatically detect:
-- **Type**: Docker
-- **Dockerfile Path**: `Dockerfile`
+Fill in these settings:
 
-**If it doesn't auto-detect:**
-- Click "Edit" next to the service
-- Change "Source Type" to "Docker"
-- Make sure "Dockerfile Path" says `Dockerfile`
-- Make sure "HTTP Port" says `5000`
+- **Name**: `badminton-court-finder` (or your preferred name)
+- **Region**: Choose closest to you (e.g., Oregon USA, Frankfurt EU)
+- **Branch**: `main`
+- **Root Directory**: (leave blank)
+- **Runtime**: `Docker`
+- **Instance Type**: **Free** (or Basic if you need more reliability)
 
-Click "Next"
+### Step 5: Add Environment Variables
 
-### Step 6: Choose Instance Size
-1. You'll see "Instance Size" options
-2. Select: **"basic-xxs"** (this is the smallest/cheapest option - $5/month)
-3. Click "Next"
+Scroll down to **"Environment Variables"** section and add these:
 
-### Step 7: Add Environment Variables
-This is IMPORTANT - you need to add your login credentials:
-
-1. Scroll down to find "Environment Variables" section
-2. Click "Edit" or "Add Variable"
-
-**Add these variables one by one:**
-
-**Variable 1:**
+**Required Variables:**
 - **Key**: `LVC_USERNAME`
 - **Value**: `theparker1337@gmail.com`
-- **IMPORTANT**: Check the box that says "Encrypt" or "Secret" (this hides it)
-- Click "Add" or "Save"
 
-**Variable 2:**
 - **Key**: `LVC_PASSWORD`
 - **Value**: `CourtFinder123!`
-- **IMPORTANT**: Check the box that says "Encrypt" or "Secret" (this hides it)
-- Click "Add" or "Save"
 
-**Optional variables (you can skip these, they have defaults):**
-- `PORT` = `5000`
+- **Key**: `PORT`
+- **Value**: `5000`
+
+**Optional Variables (have defaults):**
 - `FLASK_DEBUG` = `False`
 - `MAX_SCRAPES_PER_DAY` = `3`
 - `MAX_SCRAPES_PER_HOUR` = `1`
 - `MIN_CACHE_AGE_SECONDS` = `3600`
 
-Click "Next"
+### Step 6: Deploy
+1. Click **"Create Web Service"** at the bottom
+2. Render will start building your app
+3. **This takes 5-10 minutes** - be patient!
+4. Watch the build logs to see progress
 
-### Step 8: Review and Deploy
-1. Review all the settings you just configured
-2. At the bottom, click the big button that says **"Create Resources"** or **"Deploy"**
-3. You'll see a build progress screen
-4. **This will take 5-10 minutes** - be patient!
-5. You can watch the build logs to see what's happening
+### Step 7: Get Your API URL
+1. Once deployment is complete (status shows "Live")
+2. You'll see a URL like: `https://badminton-court-finder.onrender.com`
+3. **Copy this URL** - you'll need it for the frontend!
 
-### Step 9: Wait for Deployment
-- You'll see messages like "Building..." then "Deploying..."
-- When it says "Live" or "Active", you're done!
-- DigitalOcean will give you a URL like: `https://your-app-name-xyz123.ondigitalocean.app`
-- **Copy this URL** - you'll need it!
-
----
-
-## Part 3: Test Your Deployment
-
-### Step 1: Test Health Check
-Open a new terminal window and type:
+### Step 8: Test Your API
+Open terminal and test:
 
 ```bash
-curl https://YOUR-APP-URL-HERE/health
+curl https://YOUR-RENDER-URL/health
 ```
 
-Replace `YOUR-APP-URL-HERE` with the actual URL DigitalOcean gave you.
-
-**Example:**
+Example:
 ```bash
-curl https://badminton-court-finder-xyz123.ondigitalocean.app/health
+curl https://badminton-court-finder.onrender.com/health
 ```
 
 You should see: `{"status":"healthy"}`
 
-### Step 2: Test Facilities Endpoint
-Type:
-
+Test facilities:
 ```bash
-curl https://YOUR-APP-URL-HERE/api/facilities
+curl https://YOUR-RENDER-URL/api/facilities
 ```
 
 You should see: `{"facilities":["Linton Village College"]}`
 
-### Step 3: Test Availability
-Type:
+---
+
+## Part 3: Deploy Frontend to GitHub Pages
+
+### Step 1: Update Frontend with Your API URL
+1. Open `index.html` in your code editor
+2. Find line ~316 that says:
+   ```javascript
+   const API_URL = window.location.hostname === 'localhost' 
+       ? 'http://localhost:5000' 
+       : 'https://your-app-name.onrender.com';
+   ```
+3. Replace `https://your-app-name.onrender.com` with your actual Render URL
+4. Save the file
+
+### Step 2: Commit and Push Changes
+In terminal:
 
 ```bash
-curl "https://YOUR-APP-URL-HERE/api/availability?facility=Linton%20Village%20College&date=2026-02-06"
+git add index.html
+git commit -m "Update API URL for production"
+git push origin main
 ```
 
-You should see a list of available time slots.
+### Step 3: Enable GitHub Pages
+1. Go to your repository on GitHub: https://github.com/Givesheals/badminton-court-finder
+2. Click **"Settings"** tab
+3. In the left sidebar, click **"Pages"**
+4. Under "Source", select:
+   - Branch: **main**
+   - Folder: **/ (root)**
+5. Click **"Save"**
+
+### Step 4: Wait for Deployment
+1. GitHub will show "Your site is ready to be published at..."
+2. Wait 1-2 minutes
+3. Your site will be live at: `https://givesheals.github.io/badminton-court-finder/`
+
+### Step 5: Test Your Frontend
+1. Open your browser
+2. Go to: `https://givesheals.github.io/badminton-court-finder/`
+3. Try selecting some days and searching for courts
 
 ---
 
-## Part 4: Set Budget Alerts
+## Part 4: Render Free Tier Notes
 
-### Step 1: Go to Billing
-1. In DigitalOcean, click on your profile/account icon (top right)
-2. Click "Billing" or "Settings" → "Billing"
+**Important things to know about Render's free tier:**
 
-### Step 2: Set Budget Alerts
-1. Look for "Budget Alerts" or "Spending Alerts"
-2. Click "Add Alert" or "Create Alert"
-3. Set alerts at:
-   - **$10/month** - Warning level
-   - **$20/month** - Warning level  
-   - **$50/month** - Critical level
-4. Save each alert
+1. **Sleep after inactivity**: Free apps sleep after 15 minutes of no activity
+2. **Cold starts**: First request after sleep takes 30-60 seconds to wake up
+3. **750 hours/month free**: Enough for hobby projects
+4. **Upgrade if needed**: Basic plan is $7/month for always-on service
 
-### Step 3: (Optional) Set Spending Limit
-1. Look for "Spending Limit" option
-2. You can set a hard limit (e.g., $20/month) that stops services if exceeded
-3. This is optional but recommended for safety
+**To avoid slow first loads:**
+- Consider upgrading to Basic plan ($7/month)
+- Or set up a health check ping service (like cron-job.org) to keep it awake
 
 ---
 
@@ -208,19 +200,32 @@ You should see a list of available time slots.
 - Try: `git remote set-url origin https://github.com/Givesheals/badminton-court-finder.git`
 - Then try `git push origin main` again
 
-### If DigitalOcean Build Fails:
-1. Click on your app in DigitalOcean
-2. Go to "Runtime Logs" tab
+### If Render Build Fails:
+1. Click on your web service in Render dashboard
+2. Go to **"Logs"** tab
 3. Look for error messages (usually in red)
 4. Common issues:
    - Playwright browser installation failing
    - Missing environment variables
-   - Port configuration wrong
+   - Docker build errors
 
-### If App Doesn't Work After Deployment:
-1. Check "Runtime Logs" in DigitalOcean dashboard
+### If API Doesn't Work After Deployment:
+1. Check **"Logs"** in Render dashboard
 2. Verify environment variables are set correctly
 3. Make sure the URL is correct (check for typos)
+4. Test health endpoint first: `curl https://your-url.onrender.com/health`
+
+### If Frontend Can't Connect to API:
+1. Check browser console for errors (F12 → Console)
+2. Verify API URL in index.html is correct
+3. Make sure CORS is enabled (already in app.py)
+4. Check API is running: visit health endpoint in browser
+
+### If GitHub Pages Shows 404:
+1. Wait 2-3 minutes (can take time to deploy)
+2. Check Settings → Pages shows "Your site is published"
+3. Make sure index.html is in root of repo
+4. Try accessing with trailing slash: `https://givesheals.github.io/badminton-court-finder/`
 
 ---
 
@@ -232,3 +237,14 @@ If you get stuck at any step:
 3. **Take a screenshot** if possible
 
 I'll help you fix it!
+
+---
+
+## Summary of Your URLs
+
+After successful deployment:
+
+- **Frontend (GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
+- **Backend API (Render)**: `https://YOUR-APP-NAME.onrender.com`
+
+Save these somewhere safe!

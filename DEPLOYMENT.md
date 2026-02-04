@@ -1,82 +1,97 @@
 # Deployment Guide
 
-## DigitalOcean App Platform
+This project uses a split deployment architecture:
+- **Backend API**: Hosted on Render
+- **Frontend**: Hosted on GitHub Pages
 
-### Prerequisites
-- DigitalOcean account
-- GitHub repository with your code
-- Environment variables set up
+## Quick Start
 
-### Steps
+### Backend (Render)
 
-1. **Push code to GitHub**
+1. **Sign up at Render**: https://render.com/ (use GitHub login)
+
+2. **Create Web Service**:
+   - Connect your GitHub repository
+   - Select `badminton-court-finder`
+   - Runtime: Docker
+   - Instance Type: Free or Basic ($7/month)
+
+3. **Set Environment Variables**:
+   ```
+   LVC_USERNAME=theparker1337@gmail.com
+   LVC_PASSWORD=CourtFinder123!
+   PORT=5000
+   ```
+
+4. **Deploy**: Render will auto-build from your Dockerfile
+
+5. **Get URL**: Save your Render URL (e.g., `https://badminton-court-finder.onrender.com`)
+
+### Frontend (GitHub Pages)
+
+1. **Update API URL** in `index.html`:
+   ```javascript
+   const API_URL = 'https://your-app-name.onrender.com';
+   ```
+
+2. **Push to GitHub**:
    ```bash
-   git add .
-   git commit -m "Initial deployment setup"
+   git add index.html
+   git commit -m "Update API URL"
    git push origin main
    ```
 
-2. **Create App in DigitalOcean**
-   - Go to DigitalOcean App Platform
-   - Click "Create App"
-   - Connect your GitHub repository
-   - Select the branch (usually `main`)
+3. **Enable GitHub Pages**:
+   - Go to Settings → Pages
+   - Source: main branch, / (root)
+   - Save
 
-3. **Configure App**
-   - Use the `app.yaml` file or configure manually:
-     - **Build Command**: (auto-detected from Dockerfile)
-     - **Run Command**: (auto-detected from Dockerfile)
-     - **Port**: 5000
-     - **Instance Size**: `basic-xxs` (smallest/cheapest)
+4. **Access**: Your site will be at `https://[username].github.io/badminton-court-finder/`
 
-4. **Set Environment Variables**
-   In DigitalOcean dashboard, add these as **SECRETS**:
-   - `LVC_USERNAME`: Your Linton Village College username
-   - `LVC_PASSWORD`: Your Linton Village College password
-   
-   Optional (with defaults):
-   - `MAX_SCRAPES_PER_DAY`: 3
-   - `MAX_SCRAPES_PER_HOUR`: 1
-   - `MIN_CACHE_AGE_SECONDS`: 3600
-   - `PORT`: 5000
-   - `FLASK_DEBUG`: False
+## Detailed Instructions
 
-5. **Deploy**
-   - Click "Create Resources"
-   - Wait for build and deployment (5-10 minutes)
+See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
 
-6. **Set Budget Alerts**
-   - Go to Billing → Budget Alerts
-   - Set alerts at $10, $20, $50/month
-   - Set hard limit if desired
+## Architecture
 
-### Cost Estimate
-- **basic-xxs instance**: ~$5/month
-- **Total**: ~$5-7/month for low usage
+```
+┌─────────────────────────────────────────────┐
+│  User's Browser                             │
+│  https://givesheals.github.io/...           │
+│  (Static HTML/CSS/JS from GitHub Pages)     │
+└────────────┬────────────────────────────────┘
+             │
+             │ HTTPS API Calls
+             ▼
+┌─────────────────────────────────────────────┐
+│  Backend API                                │
+│  https://your-app.onrender.com              │
+│  (Flask + Playwright + SQLite on Render)    │
+└─────────────────────────────────────────────┘
+```
 
-## Railway
+## Cost Breakdown
 
-### Steps
+| Service | Tier | Cost | Notes |
+|---------|------|------|-------|
+| GitHub Pages | Free | $0 | Unlimited static hosting |
+| Render Free | Free | $0 | Sleeps after 15min inactivity |
+| Render Basic | Paid | $7/mo | Always-on, faster |
 
-1. **Install Railway CLI** (optional)
-   ```bash
-   npm i -g @railway/cli
-   railway login
-   ```
+**Recommended**: Start with free tier, upgrade to Basic if cold starts are annoying.
 
-2. **Create Project**
-   - Go to railway.app
-   - Create new project
-   - Connect GitHub repo
+## Environment Variables
 
-3. **Configure**
-   - Railway auto-detects Dockerfile
-   - Set environment variables in dashboard
-   - Deploy
+### Required
+- `LVC_USERNAME`: Linton Village College username
+- `LVC_PASSWORD`: Linton Village College password
+- `PORT`: 5000 (Render requires this)
 
-4. **Set Budget Limits**
-   - Go to Project Settings → Usage
-   - Set spending limit
+### Optional (with defaults)
+- `FLASK_DEBUG`: False
+- `MAX_SCRAPES_PER_DAY`: 3
+- `MAX_SCRAPES_PER_HOUR`: 1
+- `MIN_CACHE_AGE_SECONDS`: 3600
 
 ## Testing Locally
 
@@ -90,50 +105,140 @@ playwright install chromium
 # Run migration
 python migrate_db.py
 
-# Test API
+# Start API
 python app.py
 
-# In another terminal, test endpoints:
+# In another terminal, test:
 curl http://localhost:5000/health
 curl http://localhost:5000/api/facilities
-curl "http://localhost:5000/api/availability?facility=Linton%20Village%20College&date=2026-02-06"
+
+# Open index.html in browser (set API_URL to localhost)
 ```
+
+## Render-Specific Notes
+
+### Free Tier Limitations
+- Sleeps after 15 minutes of inactivity
+- Cold start takes 30-60 seconds on first request
+- 750 hours/month included (plenty for hobby projects)
+- Shared CPU/RAM (slower than Basic)
+
+### Basic Tier Benefits ($7/month)
+- Always-on (no sleep)
+- Instant responses
+- More CPU/RAM
+- Better for regular users
+
+### Dockerfile Optimization
+The included Dockerfile is optimized for Render:
+- Multi-stage build for smaller image
+- Playwright browsers pre-installed
+- SQLite database persists in container
+- Python dependencies cached
 
 ## Monitoring
 
-### Check Logs
-- DigitalOcean: App → Runtime Logs
-- Railway: Deployments → View Logs
-
-### Health Check
+### Check Backend Health
 ```bash
-curl https://your-app-url.com/health
+curl https://your-app-name.onrender.com/health
 ```
+
+### Check Logs
+- Render: Dashboard → Your Service → Logs tab
+- GitHub Pages: Usually just works, check browser console for errors
 
 ### Check Facility Stats
 ```bash
-curl https://your-app-url.com/api/facility/Linton%20Village%20College/stats
+curl https://your-app-name.onrender.com/api/facility/Linton%20Village%20College/stats
 ```
 
 ## Troubleshooting
 
-### Playwright Browser Issues
-If Playwright fails in cloud:
-- Ensure `playwright install chromium` runs in Dockerfile
-- Check that system dependencies are installed
+### Render Build Fails
+1. Check build logs in Render dashboard
+2. Common issues:
+   - Dockerfile syntax errors
+   - Missing system dependencies
+   - Playwright installation fails
 
-### Database Issues
-- SQLite works for MVP
-- For production, consider PostgreSQL (add to app.yaml)
+### Render App Crashes
+1. Check deploy logs
+2. Verify environment variables are set
+3. Check database initialization
+4. Look for Python exceptions
 
-### Rate Limiting
-- Check facility stats endpoint to see scrape counts
-- Adjust `MAX_SCRAPES_PER_DAY` if needed
+### Frontend Can't Connect to Backend
+1. Check CORS is enabled (already in app.py)
+2. Verify API_URL in index.html is correct
+3. Check Render app is running (not sleeping)
+4. Check browser console for errors
 
-## Budget Safety Checklist
+### Playwright Issues
+- Ensure Dockerfile installs Chromium
+- Check system dependencies are installed
+- Render's environment should work out of the box
 
-- [ ] Set budget alerts in cloud platform
-- [ ] Verify rate limiting is working (check logs)
-- [ ] Test circuit breaker (trigger errors)
-- [ ] Monitor first few days closely
-- [ ] Set up logging/monitoring alerts
+## Database Persistence
+
+The app uses SQLite with a file-based database:
+- File: `court_availability.db`
+- Persists in Render's ephemeral storage
+- Lost on container restart (acceptable for cache)
+- For permanent storage, upgrade to PostgreSQL
+
+## Rate Limiting & Budget Safety
+
+Built-in protections:
+- Max 3 scrapes per facility per day
+- Max 1 scrape per facility per hour
+- Minimum 1-hour cache TTL
+- Circuit breaker after 3 consecutive errors
+
+These limits prevent runaway costs from scraping.
+
+## Updating After Deployment
+
+### Update Backend
+```bash
+git add .
+git commit -m "Update backend"
+git push origin main
+```
+Render auto-deploys on push.
+
+### Update Frontend
+```bash
+git add index.html
+git commit -m "Update frontend"
+git push origin main
+```
+GitHub Pages auto-deploys in 1-2 minutes.
+
+## Adding New Facilities
+
+1. Create scraper in `scrapers/` directory
+2. Add to `scraper_manager.py`
+3. Update `FACILITY_BOOKING_URLS` in `index.html`
+4. Push to GitHub
+5. Both backend and frontend will auto-deploy
+
+## Security Notes
+
+- Never commit credentials to Git
+- Use environment variables in Render
+- HTTPS everywhere (GitHub Pages and Render both use HTTPS)
+- Credentials stored as encrypted env vars in Render
+
+## Next Steps
+
+- [ ] Add more facility scrapers
+- [ ] Set up uptime monitoring (e.g., UptimeRobot)
+- [ ] Add Google Analytics (optional)
+- [ ] Consider custom domain (optional)
+- [ ] Add email notifications for new availability (future)
+
+## Support
+
+For detailed step-by-step instructions, see:
+- [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) - Beginner-friendly guide
+- [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) - Alternative to Render (also free tier)
