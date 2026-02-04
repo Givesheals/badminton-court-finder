@@ -81,7 +81,7 @@ class LintonVillageCollegeScraper:
                 print("Attempting to log in...")
                 try:
                     # Wait for login form to appear
-                    page.wait_for_selector('input[type="email"], input[name="email"], input[id*="email"], input[type="text"]', timeout=10000)
+                    page.wait_for_selector('input[type="email"], input[name="email"], input[id*="email"], input[type="text"]', timeout=30000)
                     
                     # Find username/email field
                     email_selectors = [
@@ -283,7 +283,7 @@ class LintonVillageCollegeScraper:
         
         try:
             # Wait for the availability table to load
-            page.wait_for_selector('#slotsGrid', timeout=10000)
+            page.wait_for_selector('#slotsGrid', timeout=30000)
             
             # Get the table
             table = page.locator('#slotsGrid')
