@@ -1,0 +1,31 @@
+# DigitalOcean App Platform configuration
+name: badminton-court-finder
+region: nyc
+
+services:
+- name: api
+  github:
+    repo: your-username/badminton-court-finder
+    branch: main
+    deploy_on_push: true
+  dockerfile_path: Dockerfile
+  http_port: 5000
+  instance_count: 1
+  instance_size_slug: basic-xxs  # Smallest/cheapest option
+  envs:
+  - key: PORT
+    value: "5000"
+  - key: FLASK_DEBUG
+    value: "False"
+  - key: MAX_SCRAPES_PER_DAY
+    value: "3"
+  - key: MAX_SCRAPES_PER_HOUR
+    value: "1"
+  - key: MIN_CACHE_AGE_SECONDS
+    value: "3600"
+  - key: LVC_USERNAME
+    scope: RUN_TIME
+    type: SECRET
+  - key: LVC_PASSWORD
+    scope: RUN_TIME
+    type: SECRET
