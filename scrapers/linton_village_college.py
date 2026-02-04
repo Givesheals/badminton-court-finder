@@ -43,9 +43,19 @@ class LintonVillageCollegeScraper:
         print("Starting Linton Village College scraper...")
         
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=self.headless)
-            context = browser.new_context()
+            browser = p.chromium.launch(
+                headless=self.headless,
+                args=['--disable-blink-features=AutomationControlled']
+            )
+            context = browser.new_context(
+                user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='en-GB',
+                timezone_id='Europe/London'
+            )
+            # Hide webdriver flag
             page = context.new_page()
+            page.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             
             try:
                 # Step 1: Navigate to badminton hire page
@@ -82,8 +92,9 @@ class LintonVillageCollegeScraper:
                 # Step 3: Login
                 print("Attempting to log in...")
                 try:
-                    # Wait for login form to appear
-                    page.wait_for_selector('input[type="email"], input[name="email"], input[id*="email"], input[type="text"]', timeout=30000)
+                    # Wait for login form to appear (longer timeout for cloud environment)
+                    print("Waiting for login form...")
+                    page.wait_for_selector('input[type="email"], input[name="email"], input[id*="email"], input[type="text"]', timeout=60000)
                     
                     # Find username/email field
                     email_selectors = [
@@ -285,7 +296,7 @@ class LintonVillageCollegeScraper:
         
         try:
             # Wait for the availability table to load
-            page.wait_for_selector('#slotsGrid', timeout=30000)
+            page.wait_for_selector('#slotsGrid', timeout=60000)
             
             # Get the table
             table = page.locator('#slotsGrid')
