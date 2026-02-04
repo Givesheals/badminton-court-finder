@@ -61,14 +61,16 @@ class LintonVillageCollegeScraper:
                     if book_now.is_visible():
                         book_now.click()
                         print("Clicked 'Book now' button")
-                        time.sleep(3)  # Wait for login page to load
+                        page.wait_for_load_state('networkidle', timeout=30000)
+                        time.sleep(2)  # Additional buffer
                     else:
                         # Try alternative selectors
                         book_now = page.locator('a:has-text("Book now")').first
                         if book_now.is_visible():
                             book_now.click()
                             print("Clicked 'Book now' link")
-                            time.sleep(3)
+                            page.wait_for_load_state('networkidle', timeout=30000)
+                            time.sleep(2)
                         else:
                             raise Exception("Could not find 'Book now' button")
                 except Exception as e:
