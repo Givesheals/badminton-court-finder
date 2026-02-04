@@ -95,15 +95,12 @@ class LintonVillageCollegeScraper:
                 
                 # Step 3: Login
                 print("Attempting to log in...")
+                print(f"Current URL after Book now: {page.url}")
                 try:
-                    # Wait for redirect to login page (anglianleisure domain)
-                    print(f"Waiting for login page to load... Current URL: {page.url}")
-                    page.wait_for_url("**/mrmLogin.aspx**", timeout=30000)
-                    print(f"Login page loaded: {page.url}")
-                    
-                    # Wait for login form to appear
+                    # Wait for login form to appear (this implicitly waits for page load)
                     print("Waiting for login form...")
-                    page.wait_for_selector('input[placeholder*="Email"], input[type="password"]', timeout=30000)
+                    page.wait_for_selector('input[placeholder*="Email"]', timeout=60000)
+                    print(f"Login form found! Current URL: {page.url}")
                     
                     # Find username/email field (try placeholder first for anglianleisure form)
                     email_selectors = [
