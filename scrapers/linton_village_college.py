@@ -117,16 +117,22 @@ class LintonVillageCollegeScraper:
                 # Step 3: Login
                 print("Attempting to log in...")
                 try:
-                    # Wait for login form to appear (longer timeout for cloud environment)
-                    print("Waiting for login form...")
-                    page.wait_for_selector('input[type="email"], input[name="email"], input[id*="email"], input[type="text"]', timeout=60000)
+                    # Wait for redirect to login page (anglianleisure domain)
+                    print(f"Waiting for login page to load... Current URL: {page.url}")
+                    page.wait_for_url("**/mrmLogin.aspx**", timeout=30000)
+                    print(f"Login page loaded: {page.url}")
                     
-                    # Find username/email field
+                    # Wait for login form to appear
+                    print("Waiting for login form...")
+                    page.wait_for_selector('input[placeholder*="Email"], input[type="password"]', timeout=30000)
+                    
+                    # Find username/email field (try placeholder first for anglianleisure form)
                     email_selectors = [
+                        'input[placeholder*="Email"]',
                         'input[type="email"]',
                         'input[name="email"]',
                         'input[id*="email"]',
-                        'input[type="text"]'
+                        'input[type="text"]:visible'
                     ]
                     
                     email_filled = False
