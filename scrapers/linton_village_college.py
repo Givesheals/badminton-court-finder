@@ -69,18 +69,43 @@ class LintonVillageCollegeScraper:
                     # Try to find the book now button/link
                     book_now = page.locator('text=Book now').first
                     if book_now.is_visible():
-                        book_now.click()
-                        print("Clicked 'Book now' button")
-                        page.wait_for_load_state('networkidle', timeout=30000)
-                        time.sleep(2)  # Additional buffer
+                        # Check if it opens a new tab or navigates
+                        print("Clicking 'Book now' button and waiting for navigation...")
+                        with context.expect_page() as new_page_info:
+                            book_now.click()
+                        
+                        # Check if a new page opened
+                        try:
+                            new_page = new_page_info.value
+                            print(f"New tab opened, switching to it: {new_page.url}")
+                            page = new_page
+                            page.wait_for_load_state('networkidle', timeout=30000)
+                        except:
+                            # No new page, just wait for navigation on current page
+                            print("No new tab, waiting for current page to load...")
+                            page.wait_for_load_state('networkidle', timeout=30000)
+                        
+                        time.sleep(2)
+                        print(f"Current URL: {page.url}")
                     else:
                         # Try alternative selectors
                         book_now = page.locator('a:has-text("Book now")').first
                         if book_now.is_visible():
-                            book_now.click()
-                            print("Clicked 'Book now' link")
-                            page.wait_for_load_state('networkidle', timeout=30000)
+                            print("Clicking 'Book now' link and waiting for navigation...")
+                            with context.expect_page() as new_page_info:
+                                book_now.click()
+                            
+                            try:
+                                new_page = new_page_info.value
+                                print(f"New tab opened, switching to it: {new_page.url}")
+                                page = new_page
+                                page.wait_for_load_state('networkidle', timeout=30000)
+                            except:
+                                print("No new tab, waiting for current page to load...")
+                                page.wait_for_load_state('networkidle', timeout=30000)
+                            
                             time.sleep(2)
+                            print(f"Current URL: {page.url}")
                         else:
                             raise Exception("Could not find 'Book now' button")
                 except Exception as e:
