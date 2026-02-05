@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from database import init_db, get_session, Facility, CourtAvailability
 from scrapers.linton_village_college import LintonVillageCollegeScraper
 from scrapers.hill_roads import HillRoadsScraper
+from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +26,7 @@ class ScraperManager:
         self.scrapers = {
             'Linton Village College': LintonVillageCollegeScraper,
             'Hill Roads Sport and Tennis Centre': HillRoadsScraper,
+            'One Leisure St Ives': OneLeisureStIvesScraper,
         }
     
     def should_scrape(self, facility_name):
@@ -166,22 +168,9 @@ class ScraperManager:
         } for r in records]
     
     def get_availability(self, facility_name, date=None, start_time=None, end_time=None):
-        """Get availability for a facility, optionally filtered by date/time."""
-        # Check if we should scrape
-        should_scrape, reason = self.should_scrape(facility_name)
-        
-        if should_scrape:
-            # Scrape in background (for now, synchronous)
-            result = self.scrape_facility(facility_name)
-            if result['success']:
-                data = result['data']
-            else:
-                # Use cached data
-                data = self._get_cached_data(facility_name)
-        else:
-            # Use cached data
-            logger.info(f"Using cached data for {facility_name}: {reason}")
-            data = self._get_cached_data(facility_name)
+        """Get availability for a facility from the database only (no scrape on request)."""
+        # Always return cached/DB data. Scraping is triggered separately via /api/scrape or scheduled jobs.
+        data = self._get_cached_data(facility_name)
         
         # Apply filters
         if date:
@@ -197,19 +186,30 @@ class ScraperManager:
             'facility': facility_name,
             'count': len(data),
             'data': data,
-            'cached': not should_scrape
+            'cached': True
         }
     
+    def get_facilities_last_updated(self):
+        """Get last_scraped_at for all known facilities (for display)."""
+        result = {}
+        for name in self.scrapers:
+            facility = self.session.query(Facility).filter_by(name=name).first()
+            if facility and facility.last_scraped_at:
+                result[name] = facility.last_scraped_at.isoformat()
+            else:
+                result[name] = None
+        return result
+
     def get_facility_stats(self, facility_name):
         """Get statistics about a facility's scraping."""
         facility = self.session.query(Facility).filter_by(name=facility_name).first()
         if not facility:
             return None
-        
+
         # Get data freshness
         cached_data = self._get_cached_data(facility_name)
         latest_scrape = facility.last_scraped_at
-        
+
         return {
             'facility': facility_name,
             'last_scraped_at': latest_scrape.isoformat() if latest_scrape else None,

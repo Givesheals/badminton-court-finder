@@ -53,10 +53,12 @@ def get_availability():
 
 @app.route('/api/facilities', methods=['GET'])
 def get_facilities():
-    """Get list of available facilities."""
+    """Get list of available facilities and last scraped time per facility."""
     facilities = list(scraper_manager.scrapers.keys())
+    last_updated = scraper_manager.get_facilities_last_updated()
     return jsonify({
-        'facilities': facilities
+        'facilities': facilities,
+        'last_updated': last_updated
     }), 200
 
 

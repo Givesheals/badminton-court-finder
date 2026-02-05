@@ -198,6 +198,18 @@
             color: #2d3748;
         }
 
+        .facility-title-block {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .facility-last-updated {
+            font-size: 0.75em;
+            color: #718096;
+            font-weight: normal;
+        }
+
         .facility-link {
             background: #667eea;
             color: white;
@@ -327,7 +339,8 @@
             : 'https://badminton-court-finder.onrender.com';
 
         const FACILITY_BOOKING_URLS = {
-            'Linton Village College': 'https://clubspark.lta.org.uk/LintonVillageCampus/Booking/BookByDate#?date=' + new Date().toISOString().split('T')[0] + '&role=guest'
+            'Linton Village College': 'https://clubspark.lta.org.uk/LintonVillageCampus/Booking/BookByDate#?date=' + new Date().toISOString().split('T')[0] + '&role=guest',
+            'One Leisure St Ives': 'https://oneleisure.gladstonego.cloud/book'
         };
 
         // Initialize day selector
@@ -392,10 +405,11 @@
             `;
 
             try {
-                // Get list of facilities
+                // Get list of facilities and last updated times
                 const facilitiesResponse = await fetch(`${API_URL}/api/facilities`);
                 const facilitiesData = await facilitiesResponse.json();
                 const facilities = facilitiesData.facilities || [];
+                const lastUpdatedByFacility = facilitiesData.last_updated || {};
 
                 // Query each facility for each selected day
                 const results = {};
@@ -422,7 +436,7 @@
                     }
                 }
 
-                displayResults(results);
+                displayResults(results, lastUpdatedByFacility);
             } catch (error) {
                 console.error('Search error:', error);
                 resultsContainer.innerHTML = `
@@ -488,37 +502,48 @@
             return (endHour * 60 + endMin - startHour * 60 - startMin) / 60;
         }
 
-        function displayResults(results) {
+        function formatLastUpdated(isoString) {
+            if (!isoString) return null;
+            const d = new Date(isoString);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function displayResults(results, lastUpdatedByFacility = {}) {
             const resultsContainer = document.getElementById('resultsContainer');
             const facilitiesWithResults = Object.entries(results).filter(([_, dates]) => 
                 Object.keys(dates).length > 0
             );
+            const facilitiesWithNoResults = Object.entries(results).filter(([_, dates]) => 
+                Object.keys(dates).length === 0
+            );
 
-            if (facilitiesWithResults.length === 0) {
+            if (facilitiesWithResults.length === 0 && facilitiesWithNoResults.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="card no-results">
                         <div class="no-results-icon">😔</div>
                         <h2>No courts found</h2>
-                        <p>Try adjusting your search criteria:</p>
-                        <ul style="text-align: left; max-width: 400px; margin: 20px auto;">
-                            <li>Select more days</li>
-                            <li>Expand your time range</li>
-                            <li>Reduce the duration needed</li>
-                            <li>Reduce the number of courts</li>
-                        </ul>
+                        <p>Try adjusting your search criteria or check that the API is running.</p>
                     </div>
                 `;
                 return;
             }
 
+            const hasAnySlots = facilitiesWithResults.length > 0;
             resultsContainer.innerHTML = `
                 <div class="card">
-                    <h2 style="margin-bottom: 20px;">Available Courts (${facilitiesWithResults.length} ${facilitiesWithResults.length === 1 ? 'facility' : 'facilities'})</h2>
+                    <h2 style="margin-bottom: 20px;">${hasAnySlots 
+                        ? `Available Courts (${facilitiesWithResults.length} ${facilitiesWithResults.length === 1 ? 'facility' : 'facilities'})` 
+                        : 'Search results'}</h2>
                     <div class="results">
-                        ${facilitiesWithResults.map(([facility, dates]) => `
+                        ${facilitiesWithResults.map(([facility, dates]) => {
+                            const lastUpdatedStr = formatLastUpdated(lastUpdatedByFacility[facility]);
+                            return `
                             <div class="facility-result">
                                 <div class="facility-header">
-                                    <div class="facility-name">${facility}</div>
+                                    <div class="facility-title-block">
+                                        <span class="facility-name">${facility}</span>
+                                        ${lastUpdatedStr ? `<span class="facility-last-updated">last updated: ${lastUpdatedStr}</span>` : ''}
+                                    </div>
                                     <a href="${FACILITY_BOOKING_URLS[facility] || '#'}" 
                                        target="_blank" 
                                        class="facility-link">
@@ -545,8 +570,25 @@
                                     `;
                                 }).join('')}
                             </div>
+                        `;
+                        }).join('')}
+                    </div>
+                    ${facilitiesWithNoResults.length > 0 ? `
+                    <div class="results" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+                        <h3 style="margin-bottom: 12px; color: #718096; font-size: 1rem;">No availability for selected days</h3>
+                        ${facilitiesWithNoResults.map(([facility]) => `
+                            <div class="facility-result" style="opacity: 0.9;">
+                                <div class="facility-header">
+                                    <div class="facility-title-block">
+                                        <span class="facility-name">${facility}</span>
+                                    </div>
+                                    <a href="${FACILITY_BOOKING_URLS[facility] || '#'}" target="_blank" class="facility-link">Book Now →</a>
+                                </div>
+                                <p style="margin: 8px 0 0; font-size: 0.9em; color: #718096;">No slots match your criteria. Select days within the scraped range (e.g. next 7 days from today) or run a scrape to refresh data.</p>
+                            </div>
                         `).join('')}
                     </div>
+                    ` : ''}
                 </div>
             `;
         }
