@@ -3,6 +3,7 @@ import os
 from datetime import datetime, timedelta
 from database import init_db, get_session, Facility, CourtAvailability
 from scrapers.linton_village_college import LintonVillageCollegeScraper
+from scrapers.hill_roads import HillRoadsScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -22,7 +23,8 @@ class ScraperManager:
         self.db_engine = init_db()
         self.session = get_session(self.db_engine)
         self.scrapers = {
-            'Linton Village College': LintonVillageCollegeScraper
+            'Linton Village College': LintonVillageCollegeScraper,
+            'Hill Roads Sport and Tennis Centre': HillRoadsScraper,
         }
     
     def should_scrape(self, facility_name):
