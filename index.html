@@ -536,13 +536,13 @@
                         : 'Search results'}</h2>
                     <div class="results">
                         ${facilitiesWithResults.map(([facility, dates]) => {
-                            const lastUpdatedStr = formatLastUpdated(lastUpdatedByFacility[facility]);
+                            const lastUpdatedStr = formatLastUpdated(lastUpdatedByFacility[facility]) || 'never';
                             return `
                             <div class="facility-result">
                                 <div class="facility-header">
                                     <div class="facility-title-block">
                                         <span class="facility-name">${facility}</span>
-                                        ${lastUpdatedStr ? `<span class="facility-last-updated">last updated: ${lastUpdatedStr}</span>` : ''}
+                                        <span class="facility-last-updated">last updated: ${lastUpdatedStr}</span>
                                     </div>
                                     <a href="${FACILITY_BOOKING_URLS[facility] || '#'}" 
                                        target="_blank" 
@@ -576,17 +576,21 @@
                     ${facilitiesWithNoResults.length > 0 ? `
                     <div class="results" style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
                         <h3 style="margin-bottom: 12px; color: #718096; font-size: 1rem;">No availability for selected days</h3>
-                        ${facilitiesWithNoResults.map(([facility]) => `
+                        ${facilitiesWithNoResults.map(([facility]) => {
+                            const lastUpdatedStr = formatLastUpdated(lastUpdatedByFacility[facility]) || 'never';
+                            return `
                             <div class="facility-result" style="opacity: 0.9;">
                                 <div class="facility-header">
                                     <div class="facility-title-block">
                                         <span class="facility-name">${facility}</span>
+                                        <span class="facility-last-updated">last updated: ${lastUpdatedStr}</span>
                                     </div>
                                     <a href="${FACILITY_BOOKING_URLS[facility] || '#'}" target="_blank" class="facility-link">Book Now →</a>
                                 </div>
                                 <p style="margin: 8px 0 0; font-size: 0.9em; color: #718096;">No slots match your criteria. Select days within the scraped range (e.g. next 7 days from today) or run a scrape to refresh data.</p>
                             </div>
-                        `).join('')}
+                        `;
+                        }).join('')}
                     </div>
                     ` : ''}
                 </div>
