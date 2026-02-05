@@ -78,10 +78,19 @@ class OneLeisureStIvesScraper:
             )
 
             try:
-                # Step 1: Open book page
+                # Step 1: Open book page (allow extra time on Render/slow envs)
                 print(f"Navigating to {self.BASE_URL}...")
-                page.goto(self.BASE_URL, wait_until="networkidle")
-                time.sleep(2)
+                page.goto(self.BASE_URL, wait_until="networkidle", timeout=60000)
+                time.sleep(3)
+                # Wait for the booking form to be visible (SPA may load slowly on Render)
+                try:
+                    page.get_by_text("Where", exact=True).first.wait_for(state="visible", timeout=15000)
+                except Exception:
+                    try:
+                        page.get_by_placeholder(re.compile(r"location|where", re.I)).first.wait_for(state="visible", timeout=10000)
+                    except Exception:
+                        pass
+                time.sleep(1)
 
                 # Step 2: Set "Where" → One Leisure St Ives Indoo
                 print("Setting 'Where' to One Leisure St Ives Indoo...")
@@ -128,60 +137,51 @@ class OneLeisureStIvesScraper:
 
     def _set_where(self, page):
         """Click the Where dropdown to open it, then select One Leisure St Ives Indoo."""
-        # 1) Find and click the "Where" dropdown trigger (the box you click to open the list)
+        # Longer timeouts for Render/slow envs (SPA loads slowly headless)
+        wait_short, wait_long = 5000, 10000
         where_clicked = False
-        # Try combobox with "Where" in name (common for filter dropdowns)
+        # GladstoneGo: Where field often has placeholder "Search for a location..."
         try:
-            cb = page.get_by_role("combobox", name=re.compile(r"Where", re.I)).first
-            if cb.is_visible(timeout=3000):
-                cb.click()
+            inp = page.get_by_placeholder(re.compile(r"Search for a location|location", re.I)).first
+            if inp.is_visible(timeout=wait_long):
+                inp.click()
                 where_clicked = True
-                print("Clicked Where combobox.")
+                print("Clicked Where (placeholder 'Search for a location').")
         except Exception:
             pass
         if not where_clicked:
-            # Try: clickable that contains the label "Where" (e.g. the filter row for Where)
             try:
-                # Parent of "Where" text might be a label; the actual dropdown is often a sibling
+                cb = page.get_by_role("combobox", name=re.compile(r"Where", re.I)).first
+                if cb.is_visible(timeout=wait_long):
+                    cb.click()
+                    where_clicked = True
+                    print("Clicked Where combobox.")
+            except Exception:
+                pass
+        if not where_clicked:
+            try:
                 label = page.get_by_text("Where", exact=True).first
-                if label.is_visible(timeout=3000):
-                    # Click the next focusable/clickable: input, button, or div with role/listbox trigger
+                if label.is_visible(timeout=wait_long):
                     parent = label.locator("xpath=ancestor::*[.//input or .//button or .//*[@role='combobox']][1]")
-                    if parent.count() > 0 and parent.first.is_visible(timeout=2000):
+                    if parent.count() > 0 and parent.first.is_visible(timeout=wait_short):
                         parent.first.click()
                         where_clicked = True
                         print("Clicked Where (parent of label).")
             except Exception:
                 pass
         if not where_clicked:
-            # Try: any clickable that shows "Where" and looks like a dropdown (placeholder "Select" or similar)
-            try:
-                # First input or button in the page that is in the same section as "Where"
-                section = page.locator("label, [class*='filter'], [class*='where']").filter(has_text=re.compile(r"^\s*Where\s*$", re.I)).first
-                if section.is_visible(timeout=3000):
-                    # Next sibling or parent's next child that is clickable
-                    trigger = section.locator("xpath=following-sibling::*[1] | ancestor::*[1]//*[@role='combobox'] | ancestor::*[2]//input | ancestor::*[2]//button").first
-                    if trigger.count() > 0 and trigger.first.is_visible(timeout=2000):
-                        trigger.first.click()
-                        where_clicked = True
-                        print("Clicked Where (section trigger).")
-            except Exception:
-                pass
-        if not where_clicked:
-            # Fallback: click the first visible combobox or the first input in a form (Where is often first)
             try:
                 first_combobox = page.get_by_role("combobox").first
-                if first_combobox.is_visible(timeout=3000):
+                if first_combobox.is_visible(timeout=wait_long):
                     first_combobox.click()
                     where_clicked = True
                     print("Clicked first combobox (Where).")
             except Exception:
                 pass
         if not where_clicked:
-            # Last resort: click near "Where" - the clickable area is often the whole filter block
             try:
                 block = page.get_by_text("Where", exact=True).locator("xpath=ancestor::*[contains(@class, 'filter') or contains(@class, 'field') or contains(@class, 'select')][1]")
-                if block.count() > 0 and block.first.is_visible(timeout=3000):
+                if block.count() > 0 and block.first.is_visible(timeout=wait_long):
                     block.first.click()
                     where_clicked = True
                     print("Clicked Where block.")
@@ -434,8 +434,8 @@ class OneLeisureStIvesScraper:
             self._scroll_timetable_grid(page)
             time.sleep(0.5)
 
-            # Find all slot cards for this date and parse them
-            day_slots = self._parse_timetable_cards_for_date(page, date_str, day_name)
+            # Find all slot cards and parse (use date from card text when present so we're correct even if calendar didn't change)
+            day_slots = self._parse_timetable_cards_for_date(page, date_str, day_name, target_date=target_date)
             all_slots.extend(day_slots)
             print(f"  {date_str}: {len(day_slots)} slots ({sum(1 for s in day_slots if s['is_available'])} available)")
 
@@ -443,23 +443,22 @@ class OneLeisureStIvesScraper:
 
     def _select_timetable_date(self, page, target_date, day_num, month_abbr):
         """Click the calendar day cell for the given date (e.g. THU 5 in February)."""
-        # Calendar shows "THU 5", "FRI 6", etc. Match day number as whole word so we don't match 5 in 15.
         day_pattern = re.compile(rf"(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+{day_num}\b", re.I)
         try:
-            # Prefer: cell that shows "THU 5" style (day name + day number)
             day_cell = page.locator("[class*='calendar'], [class*='date'], [class*='day'], button, a").filter(
                 has_text=day_pattern
             ).first
             if day_cell.is_visible(timeout=3000):
                 day_cell.click()
+                time.sleep(1.5)  # Let grid update before parsing
                 return True
         except Exception:
             pass
         try:
-            # Fallback: any element whose text is exactly the day number (e.g. "5") in a calendar area
             day_cell = page.get_by_text(re.compile(rf"^{day_num}$"), exact=False).first
             if day_cell.is_visible(timeout=2000):
                 day_cell.click()
+                time.sleep(1.5)
                 return True
         except Exception:
             pass
@@ -484,9 +483,34 @@ class OneLeisureStIvesScraper:
         except Exception:
             pass
 
-    def _parse_timetable_cards_for_date(self, page, date_str, day_name):
-        """Find all slot cards in the grid and parse court, time, availability. Only 'Book now' = available."""
+    def _parse_date_from_card_text(self, text, target_date=None):
+        """Parse 'Thu 5th Feb' or '5th Feb' from card text; return (date_str, day_name) or (None, None)."""
+        year = target_date.year if target_date else datetime.now().year
+        m = re.search(
+            r"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d+)(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b",
+            text, re.I
+        )
+        if not m:
+            m = re.search(r"\b(\d+)(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", text, re.I)
+        if m:
+            day_num = int(m.group(1))
+            month_abbr = m.group(2).lower()[:3]
+            month = MONTH_NAMES.get(month_abbr)
+            if month:
+                # Year rollover: if card says Jan and we're scraping in Dec, use next year
+                if month == 1 and target_date and target_date.month == 12:
+                    year = target_date.year + 1
+                try:
+                    d = datetime(year, month, day_num).date()
+                    return d.strftime("%Y-%m-%d"), d.strftime("%A")
+                except ValueError:
+                    pass
+        return None, None
+
+    def _parse_timetable_cards_for_date(self, page, date_str, day_name, target_date=None):
+        """Find all slot cards in the grid and parse court, time, availability. Use date from card text when present."""
         slots = []
+        year = target_date.year if target_date else datetime.now().year
         # Cards contain: "Court N", "HH:MM - HH:MM", "Thu 5th Feb", and either "Book now" or "unavailable" or "available to be booked"
         card_selectors = [
             page.locator("[class*='card'], [class*='slot'], [class*='cell']").filter(
@@ -526,6 +550,10 @@ class OneLeisureStIvesScraper:
         for card in cards:
             try:
                 text = card.inner_text()
+                # Use date from card text ("Thu 5th Feb") when present so we're correct even if calendar didn't change
+                slot_date_str, slot_day_name = self._parse_date_from_card_text(text, target_date=target_date)
+                if slot_date_str is None:
+                    slot_date_str, slot_day_name = date_str, day_name
                 # Court: "Court 1" .. "Court 6"
                 court_m = re.search(r"Court\s+(\d+)", text, re.I)
                 if not court_m:
@@ -538,15 +566,15 @@ class OneLeisureStIvesScraper:
                     continue
                 start_time = f"{int(time_m.group(1)):02d}:{time_m.group(2)}"
                 end_time = f"{int(time_m.group(3)):02d}:{time_m.group(4)}"
-                key = (date_str, court_label, start_time)
+                key = (slot_date_str, court_label, start_time)
                 if key in seen:
                     continue
                 seen.add(key)
                 # Availability: only "Book now" means bookable; "unavailable" or "available to be booked on" = not
                 is_available = bool(re.search(r"Book\s+now", text, re.I))
                 slots.append({
-                    "date": date_str,
-                    "day_name": day_name,
+                    "date": slot_date_str,
+                    "day_name": slot_day_name,
                     "start_time": start_time,
                     "end_time": end_time,
                     "court_number": court_label,
