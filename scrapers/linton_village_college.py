@@ -97,9 +97,14 @@ class LintonVillageCollegeScraper:
                 print("Attempting to log in...")
                 print(f"Current URL after Book now: {page.url}")
                 try:
-                    # Wait for login form to appear (this implicitly waits for page load)
-                    print("Waiting for login form...")
-                    page.wait_for_selector('input[placeholder*="Email"]', timeout=60000)
+                    # Wait for page to fully load first
+                    print("Waiting for page to fully load...")
+                    page.wait_for_load_state('networkidle', timeout=30000)
+                    time.sleep(2)  # Give JavaScript time to render
+                    
+                    # Wait for ANY input field (more lenient than specific placeholder)
+                    print("Waiting for login form inputs...")
+                    page.wait_for_selector('input[type="text"], input[type="email"], input[placeholder*="Email"]', timeout=30000)
                     print(f"Login form found! Current URL: {page.url}")
                     
                     # Find username/email field (try placeholder first for anglianleisure form)
