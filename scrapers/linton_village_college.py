@@ -99,14 +99,45 @@ class LintonVillageCollegeScraper:
                 try:
                     # Wait for page to fully load
                     print("Waiting for page to fully load...")
-                    page.wait_for_load_state('domcontentloaded', timeout=30000)
+                    page.wait_for_load_state('networkidle', timeout=30000)
                     time.sleep(5)  # Give JavaScript plenty of time to render
                     
                     # Debug: Check what's actually on the page
                     print(f"Page title: {page.title()}")
+                    print(f"Page URL: {page.url}")
+                    
+                    # Check for iframes
+                    iframes = page.locator('iframe').all()
+                    print(f"Found {len(iframes)} iframes on page")
+                    if iframes:
+                        print("WARNING: Page contains iframes - form might be inside one")
+                        for i, iframe in enumerate(iframes):
+                            try:
+                                src = iframe.get_attribute('src') or 'no src'
+                                print(f"  Iframe {i+1}: src={src}")
+                            except:
+                                pass
+                    
+                    # Try to find inputs in main page
                     all_inputs = page.locator('input').all()
-                    print(f"Found {len(all_inputs)} input elements on page")
-                    for i, inp in enumerate(all_inputs[:5]):  # Show first 5
+                    print(f"Found {len(all_inputs)} input elements on main page")
+                    
+                    # If no inputs found, try waiting longer and check again
+                    if len(all_inputs) == 0:
+                        print("No inputs found initially, waiting longer for JavaScript...")
+                        time.sleep(10)  # Wait even longer
+                        all_inputs = page.locator('input').all()
+                        print(f"After additional wait: Found {len(all_inputs)} input elements")
+                        
+                        # Try checking page content
+                        try:
+                            body_text = page.locator('body').inner_text()[:200]
+                            print(f"Page body text (first 200 chars): {body_text}")
+                        except:
+                            pass
+                    
+                    # Show input details
+                    for i, inp in enumerate(all_inputs[:10]):  # Show first 10
                         try:
                             input_type = inp.get_attribute('type') or 'text'
                             placeholder = inp.get_attribute('placeholder') or ''
@@ -116,7 +147,13 @@ class LintonVillageCollegeScraper:
                             print(f"  Input {i+1}: Error reading attributes: {e}")
                     
                     if len(all_inputs) == 0:
-                        raise Exception("No input fields found on page - login form may not have loaded")
+                        # Take screenshot for debugging
+                        try:
+                            page.screenshot(path='debug_no_inputs.png')
+                            print("Screenshot saved to debug_no_inputs.png")
+                        except:
+                            pass
+                        raise Exception("No input fields found on page - login form may not have loaded or is blocked")
                     
                     print(f"Login form appears to be loaded. Current URL: {page.url}")
                     
