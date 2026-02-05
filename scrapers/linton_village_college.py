@@ -2,6 +2,7 @@
 import os
 import time
 from datetime import datetime, timedelta
+from urllib.parse import urljoin
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 from dotenv import load_dotenv
 import sys
@@ -51,7 +52,14 @@ class LintonVillageCollegeScraper:
                 user_agent='Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 viewport={'width': 1920, 'height': 1080},
                 locale='en-GB',
-                timezone_id='Europe/London'
+                timezone_id='Europe/London',
+                extra_http_headers={
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-GB,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1'
+                }
             )
             # Hide webdriver flag
             page = context.new_page()
@@ -157,25 +165,27 @@ class LintonVillageCollegeScraper:
                     
                     print(f"Login form appears to be loaded. Current URL: {page.url}")
                     
-                    # Find username/email field (try placeholder first for anglianleisure form)
+                    # Find username/email field (try ASP.NET name first, then placeholder)
                     email_selectors = [
+                        'input[name*="InputLogin"]',  # ASP.NET control: ctl00$MainContent$InputLogin
                         'input[placeholder*="Email"]',
                         'input[type="email"]',
-                        'input[name="email"]',
-                        'input[id*="email"]',
-                        'input[type="text"]:visible'
+                        'input[name*="email" i]',  # Case-insensitive
+                        'input[id*="email" i]',
+                        'input[type="text"]'
                     ]
                     
                     email_filled = False
                     for selector in email_selectors:
                         try:
                             email_field = page.locator(selector).first
-                            if email_field.is_visible():
-                                email_field.fill(self.username)
-                                email_filled = True
-                                print(f"Filled email using selector: {selector}")
-                                break
-                        except:
+                            # Try to fill directly - don't check visibility first
+                            email_field.fill(self.username, timeout=10000)
+                            email_filled = True
+                            print(f"Filled email using selector: {selector}")
+                            break
+                        except Exception as e:
+                            print(f"Selector {selector} failed: {str(e)[:100]}")
                             continue
                     
                     if not email_filled:
