@@ -76,10 +76,19 @@ git push origin main
 ### Step 4: Test Frontend
 Visit: `https://givesheals.github.io/badminton-court-finder/`
 
+## After adding a new scraper (e.g. One Leisure St Ives)
+
+1. Add the scraper module under `scrapers/` and register it in `scraper_manager.py` (`self.scrapers`).
+2. Add the facility’s booking URL in `index.html` (`FACILITY_BOOKING_URLS`).
+3. **Redeploy on Render** so `/api/facilities` includes the new facility:
+   - Push to `main` (if auto-deploy is on), or
+   - Render Dashboard → your service → **Manual Deploy** → **Deploy latest commit**.
+4. Verify: `curl -s "https://badminton-court-finder.onrender.com/api/facilities"` includes the new facility name.
+
 ## Post-Deployment Checklist
 
 - [ ] Backend health check passes
-- [ ] Backend facilities endpoint works
+- [ ] Backend facilities endpoint works (and lists all facilities, including One Leisure St Ives)
 - [ ] Backend availability endpoint returns data
 - [ ] Frontend loads successfully
 - [ ] Frontend can connect to backend API

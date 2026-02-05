@@ -189,10 +189,17 @@ class ScraperManager:
             'cached': True
         }
     
+    def get_facilities_list(self):
+        """Return facility names from scrapers and DB so all known facilities appear (e.g. after new scraper added)."""
+        from_scrapers = set(self.scrapers.keys())
+        from_db = {f.name for f in self.session.query(Facility).all()}
+        return sorted(from_scrapers | from_db)
+
     def get_facilities_last_updated(self):
         """Get last_scraped_at for all known facilities (for display)."""
+        names = self.get_facilities_list()
         result = {}
-        for name in self.scrapers:
+        for name in names:
             facility = self.session.query(Facility).filter_by(name=name).first()
             if facility and facility.last_scraped_at:
                 result[name] = facility.last_scraped_at.isoformat()
