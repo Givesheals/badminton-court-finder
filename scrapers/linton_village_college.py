@@ -97,15 +97,28 @@ class LintonVillageCollegeScraper:
                 print("Attempting to log in...")
                 print(f"Current URL after Book now: {page.url}")
                 try:
-                    # Wait for page to fully load first
+                    # Wait for page to fully load
                     print("Waiting for page to fully load...")
-                    page.wait_for_load_state('networkidle', timeout=30000)
-                    time.sleep(2)  # Give JavaScript time to render
+                    page.wait_for_load_state('domcontentloaded', timeout=30000)
+                    time.sleep(5)  # Give JavaScript plenty of time to render
                     
-                    # Wait for ANY input field (more lenient than specific placeholder)
-                    print("Waiting for login form inputs...")
-                    page.wait_for_selector('input[type="text"], input[type="email"], input[placeholder*="Email"]', timeout=30000)
-                    print(f"Login form found! Current URL: {page.url}")
+                    # Debug: Check what's actually on the page
+                    print(f"Page title: {page.title()}")
+                    all_inputs = page.locator('input').all()
+                    print(f"Found {len(all_inputs)} input elements on page")
+                    for i, inp in enumerate(all_inputs[:5]):  # Show first 5
+                        try:
+                            input_type = inp.get_attribute('type') or 'text'
+                            placeholder = inp.get_attribute('placeholder') or ''
+                            name = inp.get_attribute('name') or ''
+                            print(f"  Input {i+1}: type={input_type}, placeholder={placeholder}, name={name}")
+                        except Exception as e:
+                            print(f"  Input {i+1}: Error reading attributes: {e}")
+                    
+                    if len(all_inputs) == 0:
+                        raise Exception("No input fields found on page - login form may not have loaded")
+                    
+                    print(f"Login form appears to be loaded. Current URL: {page.url}")
                     
                     # Find username/email field (try placeholder first for anglianleisure form)
                     email_selectors = [
