@@ -570,8 +570,15 @@ class OneLeisureStIvesScraper:
                 if key in seen:
                     continue
                 seen.add(key)
-                # Availability: only "Book now" means bookable; "unavailable" or "available to be booked on" = not
-                is_available = bool(re.search(r"Book\s+now", text, re.I))
+                # Availability: bookable if we see Book now/Book/Available (GladstoneGo varies); not if explicitly unavailable
+                has_bookable = bool(
+                    re.search(r"Book\s+now|Book\b|Available", text, re.I)
+                    and not re.search(r"available to be booked on", text, re.I)
+                )
+                has_unavailable = bool(
+                    re.search(r"unavailable|available to be booked on|This slot is", text, re.I)
+                )
+                is_available = has_bookable or (not has_unavailable)
                 slots.append({
                     "date": slot_date_str,
                     "day_name": slot_day_name,

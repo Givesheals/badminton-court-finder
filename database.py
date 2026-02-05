@@ -1,4 +1,5 @@
 """Database models and setup for court availability storage."""
+import os
 from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -36,9 +37,22 @@ class CourtAvailability(Base):
     scraped_at = Column(DateTime, default=datetime.utcnow)
 
 
-def init_db(db_path='court_availability.db'):
-    """Initialize the database and create tables."""
-    engine = create_engine(f'sqlite:///{db_path}')
+def init_db(db_path=None):
+    """
+    Initialize the database and create tables.
+    - If DATABASE_URL is set (e.g. Render Postgres): use PostgreSQL.
+    - Else if DB_PATH is set: use SQLite at that path.
+    - Else: use SQLite at court_availability.db (local dev).
+    """
+    database_url = os.getenv('DATABASE_URL')
+    if database_url:
+        # Render and others use postgres:// but SQLAlchemy 1.4+ expects postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+        engine = create_engine(database_url)
+    else:
+        path = db_path or os.getenv('DB_PATH', 'court_availability.db')
+        engine = create_engine(f'sqlite:///{path}')
     Base.metadata.create_all(engine)
     return engine
 
