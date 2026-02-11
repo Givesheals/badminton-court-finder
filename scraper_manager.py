@@ -5,6 +5,7 @@ from database import init_db, get_session, Facility, CourtAvailability
 from scrapers.linton_village_college import LintonVillageCollegeScraper
 from scrapers.hill_roads import HillRoadsScraper
 from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
+from scrapers.trumpington_sport import TrumpingtonSportScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +28,7 @@ class ScraperManager:
             'Linton Village College': LintonVillageCollegeScraper,
             'Hill Roads Sport and Tennis Centre': HillRoadsScraper,
             'One Leisure St Ives': OneLeisureStIvesScraper,
+            'Trumpington Sport': TrumpingtonSportScraper,
         }
     
     def should_scrape(self, facility_name):
