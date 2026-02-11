@@ -510,8 +510,8 @@ class LintonVillageCollegeScraper:
     
     def _store_availability(self, availability_data):
         """Store availability data in the database."""
-        # Clear old data for this facility (optional - you might want to keep history)
-        # self.session.query(CourtAvailability).filter_by(facility_id=self.facility.id).delete()
+        # Clear old data for this facility (subsequent scrape overwrites)
+        self.session.query(CourtAvailability).filter_by(facility_id=self.facility.id).delete()
         
         for record in availability_data:
             availability = CourtAvailability(

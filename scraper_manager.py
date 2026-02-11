@@ -112,6 +112,7 @@ class ScraperManager:
             else:
                 facility.scrape_count_today += 1
             facility.scrape_errors = 0  # Reset error count on success
+            self._purge_past_availability()
             self.session.commit()
             
             logger.info(f"Successfully scraped {facility_name}")
@@ -166,6 +167,13 @@ class ScraperManager:
             'court_number': r.court_number,
             'scraped_at': r.scraped_at.isoformat() if r.scraped_at else None
         } for r in records]
+    
+    def _purge_past_availability(self):
+        """Delete CourtAvailability rows where date is more than 24 hours in the past (keeps DB size down)."""
+        cutoff_date = (datetime.utcnow().date() - timedelta(days=1)).isoformat()
+        deleted = self.session.query(CourtAvailability).filter(CourtAvailability.date < cutoff_date).delete()
+        if deleted:
+            logger.info(f"Purged {deleted} past availability record(s) (date < {cutoff_date})")
     
     def get_availability(self, facility_name, date=None, start_time=None, end_time=None):
         """Get availability for a facility from the database only (no scrape on request)."""

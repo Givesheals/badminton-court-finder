@@ -1,4 +1,5 @@
 """Flask API for badminton court availability."""
+import threading
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from scraper_manager import ScraperManager
@@ -8,11 +9,40 @@ import os
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Facilities to skip in scheduled scrape-all (e.g. broken scrapers). Comma-separated.
+EXCLUDE_SCRAPE_FACILITIES = [
+    name.strip() for name in
+    os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
+    if name.strip()
+]
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
 # Initialize scraper manager
 scraper_manager = ScraperManager()
+
+
+def _run_scheduled_scrapes():
+    """Background thread: scrape all facilities except EXCLUDE_SCRAPE_FACILITIES. Uses its own ScraperManager."""
+    excluded = set(
+        name.strip() for name in
+        os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
+        if name.strip()
+    )
+    sm = ScraperManager()
+    try:
+        facilities = [f for f in sm.get_facilities_list() if f not in excluded]
+        logger.info(f"Scheduled scrape started for: {facilities}")
+        for name in facilities:
+            try:
+                result = sm.scrape_facility(name)
+                logger.info(f"Scheduled scrape {name}: success={result.get('success')}")
+            except Exception as e:
+                logger.error(f"Scheduled scrape {name} failed: {e}")
+    finally:
+        sm.close()
+    logger.info("Scheduled scrape run finished.")
 
 
 @app.route('/health', methods=['GET'])
@@ -60,6 +90,27 @@ def get_facilities():
         'facilities': facilities,
         'last_updated': last_updated
     }), 200
+
+
+@app.route('/api/scrape-all', methods=['POST'])
+def trigger_scrape_all():
+    """Trigger scrapes for all facilities except EXCLUDE_SCRAPE_FACILITIES (e.g. broken scrapers). Runs in background; returns 202."""
+    excluded = set(EXCLUDE_SCRAPE_FACILITIES)
+    facilities = [f for f in scraper_manager.get_facilities_list() if f not in excluded]
+    if not facilities:
+        return jsonify({
+            'status': 'no_facilities',
+            'message': 'No facilities to scrape (all excluded or none configured)',
+            'excluded': list(excluded)
+        }), 200
+    thread = threading.Thread(target=_run_scheduled_scrapes, daemon=True)
+    thread.start()
+    return jsonify({
+        'status': 'accepted',
+        'message': 'Scrapes started in background',
+        'facilities': facilities,
+        'excluded': list(excluded)
+    }), 202
 
 
 @app.route('/api/scrape', methods=['POST'])

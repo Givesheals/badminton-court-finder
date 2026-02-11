@@ -23,6 +23,7 @@ Simple query interface:
 - We store it in a database
 - User queries the database through a simple web interface
 - We show them what's available
+- **Display:** "Last updated: never" means no successful scrape has run yet for that facility on this database (e.g. new DB or a failure).
 
 ## Tech Stack
 - **Frontend**: Next.js + React (simple, AI-friendly)
