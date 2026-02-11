@@ -2,14 +2,22 @@
 
 A web app to find available badminton courts in Cambridge by aggregating availability from multiple sports facilities.
 
-**Live Demo**: [https://givesheals.github.io/badminton-court-finder/](https://givesheals.github.io/badminton-court-finder/) *(update after deployment)*
+**Live Demo**: [https://givesheals.github.io/badminton-court-finder/](https://givesheals.github.io/badminton-court-finder/)
+
+## Current setup
+
+- **Frontend**: Static HTML/CSS/JS on GitHub Pages
+- **Backend**: Flask API on Render (Docker)
+- **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
+- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md).
 
 ## Features
 
-- **Hybrid Caching**: Automatically scrapes when data is stale, uses cache when fresh
-- **Budget-Safe**: Rate limiting and daily scrape limits prevent runaway costs
-- **Circuit Breaker**: Stops scraping after consecutive errors
-- **REST API**: Simple API for querying court availability
+- **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via cron
+- **Hybrid caching**: Uses DB cache; scrapes triggered by schedule or manual POST
+- **Budget-safe**: Rate limiting and daily scrape limits prevent runaway costs
+- **Circuit breaker**: Stops scraping after 3 consecutive errors per facility
+- **REST API**: Query court availability and trigger scrapes
 
 ## Setup
 
@@ -62,15 +70,28 @@ Parameters:
 GET /api/facilities
 ```
 
-### Trigger Scrape
+### Trigger Scrape (single facility)
 ```
 POST /api/scrape
-Body: {"facility": "Linton Village College"}
+Body: {"facility": "Hill Roads Sport and Tennis Centre"}
+```
+
+### Trigger scrape-all (scheduled run)
+```
+POST /api/scrape-all
+```
+Starts background scrapes for all facilities except those in `EXCLUDE_SCRAPE_FACILITIES`. Returns 202 Accepted. Used by cron every 6 hours.
+
+### Facility stats
+```
+GET /api/facility/<facility_name>/stats
 ```
 
 ## Configuration
 
 Environment variables:
+- `DATABASE_URL`: PostgreSQL connection URL (e.g. Neon). If set, app uses Postgres; otherwise SQLite (local).
+- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: `Linton Village College`).
 - `MAX_SCRAPES_PER_DAY`: Maximum scrapes per facility per day (default: 3)
 - `MAX_SCRAPES_PER_HOUR`: Maximum scrapes per facility per hour (default: 1)
 - `MIN_CACHE_AGE_SECONDS`: Minimum cache age before re-scraping (default: 3600 = 1 hour)
@@ -85,10 +106,18 @@ Environment variables:
 2. Sign up at https://render.com/ (use GitHub login)
 3. Create new Web Service from your repository
 4. Select Docker runtime
-5. Set environment variables in Render dashboard
+5. Set environment variables in Render dashboard (including `DATABASE_URL` for Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md))
 6. Deploy (auto-builds from Dockerfile)
 
 See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for detailed steps.
+
+### Database (production)
+
+Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) for Neon setup; [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md) for Render Postgres (90-day expiry on free tier).
+
+### Scheduled scrapes (every 6 hours)
+
+Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. Step-by-step: [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md). Overview: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ### Frontend (GitHub Pages)
 
@@ -118,19 +147,26 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 
 ```
 .
-├── index.html             # Frontend UI (GitHub Pages)
-├── app.py                 # Flask API (Render)
-├── scraper_manager.py     # Scraper with rate limiting
-├── database.py            # Database models
-├── scrapers/              # Facility-specific scrapers
-│   └── linton_village_college.py
-├── Dockerfile             # Docker configuration
-├── requirements.txt       # Python dependencies
-└── DEPLOY_INSTRUCTIONS.md # Deployment guide
+├── index.html              # Frontend UI (GitHub Pages)
+├── app.py                  # Flask API (Render); /api/scrape-all for scheduled runs
+├── scraper_manager.py      # Scraper orchestration, rate limiting, purge past slots
+├── database.py             # SQLAlchemy models; Postgres (DATABASE_URL) or SQLite
+├── scrapers/               # Facility-specific scrapers
+│   ├── hill_roads.py
+│   ├── linton_village_college.py   # Currently excluded (broken on Render)
+│   └── one_leisure_st_ives.py
+├── Dockerfile
+├── requirements.txt
+├── DEPLOY_INSTRUCTIONS.md  # Deployment guide
+├── SCHEDULED_SCRAPES.md    # Every-6h scrape overview and options
+├── OPTION_A_WALKTHROUGH.md # cron-job.org setup (Option A)
+├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
+└── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
 ```
 
 ## Adding New Facilities
 
-1. Create a new scraper in `scrapers/` directory
-2. Add scraper class to `scraper_manager.py` in the `scrapers` dict
-3. Follow the pattern from `linton_village_college.py`
+1. Create a new scraper in `scrapers/` (e.g. follow `hill_roads.py` or `one_leisure_st_ives.py`).
+2. Register it in `scraper_manager.py` in the `scrapers` dict.
+3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `index.html`.
+4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no cron changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).

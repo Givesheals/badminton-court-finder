@@ -395,60 +395,82 @@
                 return;
             }
 
-            // Show loading
+            // Show loading (stays visible during retries)
             const resultsContainer = document.getElementById('resultsContainer');
-            resultsContainer.innerHTML = `
-                <div class="card loading">
-                    <div class="spinner"></div>
-                    <p>Searching for available courts...</p>
-                </div>
-            `;
-
-            try {
-                // Get list of facilities and last updated times
-                const facilitiesResponse = await fetch(`${API_URL}/api/facilities`);
-                const facilitiesData = await facilitiesResponse.json();
-                const facilities = facilitiesData.facilities || [];
-                const lastUpdatedByFacility = facilitiesData.last_updated || {};
-
-                // Query each facility for each selected day
-                const results = {};
-                
-                for (const facility of facilities) {
-                    results[facility] = {};
-                    
-                    for (const date of selectedDays) {
-                        try {
-                            const url = `${API_URL}/api/availability?facility=${encodeURIComponent(facility)}&date=${date}&start_time=${startTime}&end_time=${endTime}`;
-                            const response = await fetch(url);
-                            const data = await response.json();
-                            
-                            if (data.data && data.data.length > 0) {
-                                // Filter for continuous blocks matching duration
-                                const validSlots = findContinuousBlocks(data.data, duration, numCourts);
-                                if (validSlots.length > 0) {
-                                    results[facility][date] = validSlots;
-                                }
-                            }
-                        } catch (error) {
-                            console.error(`Error fetching ${facility} for ${date}:`, error);
-                        }
-                    }
-                }
-
-                displayResults(results, lastUpdatedByFacility);
-            } catch (error) {
-                console.error('Search error:', error);
+            const showLoading = () => {
                 resultsContainer.innerHTML = `
-                    <div class="card">
-                        <div class="error">
-                            Error searching for courts. Please check that the API is running and try again.
-                            <br><br>
-                            <small>Error: ${error.message}</small>
-                        </div>
+                    <div class="card loading">
+                        <div class="spinner"></div>
+                        <p>Searching for available courts...</p>
                     </div>
                 `;
+            };
+            showLoading();
+
+            const MAX_RETRIES = 12;   // 12 × 10s = 2 min max wait
+            const RETRY_INTERVAL_MS = 10000;
+            let lastError = null;
+
+            for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+                try {
+                    // Get list of facilities and last updated times
+                    const facilitiesResponse = await fetch(`${API_URL}/api/facilities`);
+                    if (!facilitiesResponse.ok) {
+                        throw new Error(`API returned ${facilitiesResponse.status}`);
+                    }
+                    const contentType = facilitiesResponse.headers.get('Content-Type') || '';
+                    if (!contentType.includes('application/json')) {
+                        throw new Error('API returned non-JSON (may be starting up)');
+                    }
+                    const facilitiesData = await facilitiesResponse.json();
+                    const facilities = facilitiesData.facilities || [];
+                    const lastUpdatedByFacility = facilitiesData.last_updated || {};
+
+                    // Query each facility for each selected day
+                    const results = {};
+                    for (const facility of facilities) {
+                        results[facility] = {};
+                        for (const date of selectedDays) {
+                            try {
+                                const url = `${API_URL}/api/availability?facility=${encodeURIComponent(facility)}&date=${date}&start_time=${startTime}&end_time=${endTime}`;
+                                const response = await fetch(url);
+                                if (!response.ok) continue;
+                                const ct = response.headers.get('Content-Type') || '';
+                                if (!ct.includes('application/json')) continue;
+                                const data = await response.json();
+                                if (data.data && data.data.length > 0) {
+                                    const validSlots = findContinuousBlocks(data.data, duration, numCourts);
+                                    if (validSlots.length > 0) {
+                                        results[facility][date] = validSlots;
+                                    }
+                                }
+                            } catch (e) {
+                                console.error(`Error fetching ${facility} for ${date}:`, e);
+                            }
+                        }
+                    }
+
+                    displayResults(results, lastUpdatedByFacility);
+                    return;
+                } catch (error) {
+                    lastError = error;
+                    console.warn(`Search attempt ${attempt}/${MAX_RETRIES} failed:`, error.message);
+                    if (attempt < MAX_RETRIES) {
+                        await new Promise(r => setTimeout(r, RETRY_INTERVAL_MS));
+                    }
+                }
             }
+
+            // All retries failed — show error
+            resultsContainer.innerHTML = `
+                <div class="card">
+                    <div class="error">
+                        Could not reach the API after ${MAX_RETRIES} tries. On the free tier it may be starting up — try again in a minute.
+                        <br><br>
+                        <small>Error: ${lastError ? lastError.message : 'Unknown'}</small>
+                    </div>
+                </div>
+            `;
         }
 
         function findContinuousBlocks(slots, requiredDuration, numCourts) {

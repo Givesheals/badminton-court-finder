@@ -30,23 +30,25 @@ Do these steps once. After that, scrapes run automatically every 6 hours (00:00,
 ## Step 2: Create the cron job
 
 1. In the cron-job.org dashboard, click **Create cron job** (or **Cron jobs** → **Create**).
-2. Fill in the form with these **exact** values (copy-paste where possible):
 
-| Field | Value |
-|-------|--------|
-| **Title** | `Badminton court scrape-all` (or any name you like) |
-| **Address (URL)** | `https://badminton-court-finder.onrender.com/api/scrape-all` |
-| **Request method** | **POST** (do not leave as GET) |
-| **Schedule** | **Every 6 hours** (use the preset if available), or **Custom** and set: **Minute** `0`, **Hour** `0,6,12,18`, **Day** `*`, **Month** `*`, **Weekday** `*` |
+2. **Common** (or main) section:
+   - **Title:** e.g. `Badminton court scrape-all`
+   - **Address (URL):** `https://badminton-court-finder.onrender.com/api/scrape-all`
+   - **Schedule:** Every 6 hours (preset if available), or **Custom**: **Minute** `0`, **Hour** `0,6,12,18`, **Day** `*`, **Month** `*`, **Weekday** `*`
 
-3. **Optional but recommended:** Under advanced or request options, add a header:
-   - **Header name:** `Content-Type`
-   - **Header value:** `application/json`  
-   (Some services expect this for POST.)
+3. **Headers** section:
+   - Add a header: **Key** `Content-Type`, **Value** `application/json`  
+   (You may already have this from the screenshot.)
 
-4. Leave **Notify on failure** or **Alerts** as you prefer (e.g. email if the request fails).
+4. **Advanced** section (this is where the request method lives):
+   - **Request method:** set the dropdown to **POST** (do not leave as GET).
+   - **Request body:** leave empty (our endpoint doesn’t need a body).
+   - **Timeout:** 30 seconds is fine (the API returns 202 quickly; scrapes run in the background).
+   - **Time zone:** leave as is (schedule runs in UTC unless you change it).
 
-5. Click **Create** or **Save**.
+5. Leave **Notify on failure** or **Alerts** as you prefer (e.g. email if the request fails).
+
+6. Click **CREATE** (or **Save**).
 
 ---
 
@@ -74,9 +76,9 @@ Do these steps once. After that, scrapes run automatically every 6 hours (00:00,
 
 - [ ] Signed up at https://cron-job.org  
 - [ ] Created cron job with:
-  - URL: `https://badminton-court-finder.onrender.com/api/scrape-all`
-  - Method: **POST**
-  - Schedule: every 6 hours (or minute 0, hours 0,6,12,18)
+  - **Common:** URL `https://badminton-court-finder.onrender.com/api/scrape-all`, schedule every 6 hours
+  - **Headers:** Content-Type = application/json
+  - **Advanced:** Request method = **POST**, Request body empty
 - [ ] Job is enabled and (optionally) ran once successfully
 - [ ] Saw “Scheduled scrape started for: …” in Render logs
 

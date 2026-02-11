@@ -18,10 +18,12 @@ This project uses a split deployment architecture:
 
 3. **Set Environment Variables**:
    ```
-   LVC_USERNAME=theparker1337@gmail.com
-   LVC_PASSWORD=CourtFinder123!
+   DATABASE_URL=<Neon or Postgres connection URL>
+   LVC_USERNAME=...
+   LVC_PASSWORD=...
    PORT=5000
    ```
+   Use Neon for a free, persistent DB; see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md). Optional: `EXCLUDE_SCRAPE_FACILITIES=Linton Village College` (comma-separated names to skip in scrape-all).
 
 4. **Deploy**: Render will auto-build from your Dockerfile
 
@@ -57,18 +59,35 @@ See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
 ```
 ┌─────────────────────────────────────────────┐
 │  User's Browser                             │
-│  https://givesheals.github.io/...           │
+│  https://givesheals.github.io/...            │
 │  (Static HTML/CSS/JS from GitHub Pages)     │
 └────────────┬────────────────────────────────┘
-             │
              │ HTTPS API Calls
              ▼
 ┌─────────────────────────────────────────────┐
-│  Backend API                                │
+│  Backend API (Render)                       │
 │  https://your-app.onrender.com              │
-│  (Flask + Playwright + SQLite on Render)    │
+│  Flask + Playwright                         │
+└────────────┬────────────────────────────────┘
+             │
+             │ DATABASE_URL
+             ▼
+┌─────────────────────────────────────────────┐
+│  Database (Neon Postgres or Render Postgres)│
+│  Persistent; data survives restarts          │
 └─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│  cron-job.org (every 6h)                    │
+│  POST /api/scrape-all → starts all scrapes  │
+└────────────┬────────────────────────────────┘
+             │
+             ▼
+       Backend API (same as above)
 ```
+
+- **Database**: Set `DATABASE_URL` on Render (e.g. Neon connection URL). See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md).
+- **Scheduled scrapes**: [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md) (cron-job.org); [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (overview).
 
 ## Cost Breakdown
 
@@ -83,11 +102,13 @@ See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
 ## Environment Variables
 
 ### Required
-- `LVC_USERNAME`: Linton Village College username
+- `DATABASE_URL`: PostgreSQL connection URL (e.g. Neon). Without this, the app uses SQLite (ephemeral on Render).
+- `LVC_USERNAME`: Linton Village College username (for Linton scraper when enabled)
 - `LVC_PASSWORD`: Linton Village College password
 - `PORT`: 5000 (Render requires this)
 
 ### Optional (with defaults)
+- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: `Linton Village College`).
 - `FLASK_DEBUG`: False
 - `MAX_SCRAPES_PER_DAY`: 3
 - `MAX_SCRAPES_PER_HOUR`: 1

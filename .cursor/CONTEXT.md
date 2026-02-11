@@ -26,10 +26,15 @@ Simple query interface:
 - **Display:** "Last updated: never" means no successful scrape has run yet for that facility on this database (e.g. new DB or a failure).
 
 ## Tech Stack
-- **Frontend**: Next.js + React (simple, AI-friendly)
-- **Backend**: Python + Flask (Martin's comfort zone, great for scraping)
-- **Database**: SQLite for MVP
-- **Deployment**: Vercel (frontend) + Railway/Render (backend)
+- **Frontend**: Static HTML/CSS/JS on GitHub Pages
+- **Backend**: Python + Flask (Render, Docker)
+- **Database**: Neon PostgreSQL (production, persistent); SQLite (local dev)
+- **Deployment**: GitHub Pages (frontend) + Render (backend). Scheduled scrapes via cron-job.org (POST /api/scrape-all every 6 hours).
+
+## Current state (as of last update)
+- **Facilities**: Hill Roads Sport and Tennis Centre, One Leisure St Ives (auto-scraped every 6h); Linton Village College excluded (scraper broken on Render).
+- **Scrape-all**: POST /api/scrape-all triggers all facilities except EXCLUDE_SCRAPE_FACILITIES (env var, default Linton). Cron runs at 00:00, 06:00, 12:00, 18:00 UTC.
+- **Data flow**: Scrapers overwrite facility data on each run; past slots (more than 24h ago) are purged after each successful scrape. "Last updated: never" means no successful scrape has run yet for that facility on this DB.
 
 ## Team
 - **You**: Building the frontend/UI, general product thinking
@@ -37,7 +42,7 @@ Simple query interface:
 - Both of you will use AI coding tools (Cursor, ChatGPT, etc.) to write code.
 
 ## Current Phase
-Data Research Phase - We're figuring out which Cambridge facilities we can scrape from and how to get their availability data.
+Live with 3 facilities (2 auto-scraped, 1 excluded). Adding more Cambridge facilities; fixing Linton scraper on Render when needed.
 
 ## Key Constraints
 - Web-based only (no native app - that's the whole point!)
