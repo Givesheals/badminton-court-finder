@@ -73,6 +73,7 @@ class ScraperManager:
     
     def scrape_facility(self, facility_name):
         """Scrape a facility with error handling and rate limiting."""
+        facility = None
         should_scrape, reason = self.should_scrape(facility_name)
         
         if not should_scrape:
@@ -126,14 +127,23 @@ class ScraperManager:
             
         except Exception as e:
             logger.error(f"Error scraping {facility_name}: {e}")
-            
-            # Update error count
+            # Roll back so the session is usable for the next request (avoids "Can't reconnect until invalid transaction is rolled back")
+            try:
+                self.session.rollback()
+            except Exception:
+                pass
+            # Update error count (may fail if DB connection is dead; that's OK)
             if facility:
-                facility.scrape_errors = (facility.scrape_errors or 0) + 1
-                self.session.commit()
-            
+                try:
+                    facility.scrape_errors = (facility.scrape_errors or 0) + 1
+                    self.session.commit()
+                except Exception:
+                    self.session.rollback()
             # Return cached data if available
-            cached_data = self._get_cached_data(facility_name)
+            try:
+                cached_data = self._get_cached_data(facility_name)
+            except Exception:
+                cached_data = []
             return {
                 'success': False,
                 'error': str(e),

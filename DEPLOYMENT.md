@@ -109,6 +109,7 @@ See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
 
 ### Optional (with defaults)
 - `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: `Linton Village College`).
+- `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS`: Seconds to wait between facilities in scrape-all (default: 120). Reduces risk of being blocked by sites.
 - `FLASK_DEBUG`: False
 - `MAX_SCRAPES_PER_DAY`: 3
 - `MAX_SCRAPES_PER_HOUR`: 1

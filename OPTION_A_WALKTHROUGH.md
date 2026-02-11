@@ -55,8 +55,14 @@ Do these steps once. After that, scrapes run automatically every 6 hours (00:00,
 ## Step 3: Confirm it’s active
 
 1. On the cron job’s page, check that the job is **Enabled** / **Active**.
-2. If there’s a **Run now** or **Execute now** button, click it once to trigger a test run.
-3. Wait a few seconds, then check **Last run** or **History** – you should see a successful request (e.g. HTTP 202).
+2. **Trigger a test run** (cron-job.org sometimes has no “Run now” button):
+   - From any terminal (or Postman), run:
+     ```bash
+     curl -X POST https://badminton-court-finder.onrender.com/api/scrape-all \
+       -H "Content-Type: application/json"
+     ```
+   - You should get `202 Accepted` and “Scrapes started in background”. That’s the same request the timer will send.
+3. Wait a few seconds, then check **Last run** or **History** on cron-job.org (when you do have it) – you should see a successful request (e.g. HTTP 202).
 4. In **Render** → your **Web Service** → **Logs**, you should see lines like:
    - `Scheduled scrape started for: ['Hill Roads Sport and Tennis Centre', 'One Leisure St Ives']`
    - `Scheduled scrape Hill Roads Sport and Tennis Centre: success=...`
@@ -83,3 +89,25 @@ Do these steps once. After that, scrapes run automatically every 6 hours (00:00,
 - [ ] Saw “Scheduled scrape started for: …” in Render logs
 
 That’s it. You don’t need to do anything else on your side for the 6-hour schedule.
+
+---
+
+## Testing the Linton scraper from Render (not your laptop)
+
+If your laptop’s IP is blocked by Anglian Leisure (403 on “Book now”), you can still test whether the Linton scraper would work on the timer by running it **on Render** (different IP).
+
+1. **One-off Linton scrape on Render** (request runs on Render’s servers; can take 5–15 minutes):
+   ```bash
+   curl --max-time 900 -X POST https://badminton-court-finder.onrender.com/api/scrape \
+     -H "Content-Type: application/json" \
+     -d '{"facility":"Linton Village College"}'
+   ```
+   - Replace the URL with your Render app URL if different.
+   - Ensure `LVC_USERNAME` and `LVC_PASSWORD` are set in Render → Environment.
+   - If the app was sleeping, the first request may take 30–60 s to wake, then the scrape runs.
+
+2. **Check the result**: success returns JSON with `"success": true` and availability data; failure returns an error (e.g. 403 block message).
+
+3. **Check Render logs**: Render → your Web Service → **Logs** to see scraper output (e.g. “Starting Linton Village College scraper…”, “Booking page returned 403…”, or “Scraping completed successfully!”).
+
+If Linton succeeds from Render, it should also work when the cron job runs every 6 hours (same endpoint, same server).

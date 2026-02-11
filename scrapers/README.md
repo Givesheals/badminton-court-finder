@@ -2,6 +2,13 @@
 
 This directory contains scrapers for different sports facilities.
 
+## Scraping policy (avoid getting blocked)
+
+- **Minimise manual scrapes** while building. Sites use bot protection (WAF) and can block IPs that hit them too often.
+- **Scheduled scrapes** (e.g. every 6 hours via cron) are preferred; the app uses rate limits and a delay between facilities.
+- **Linton Village College** uses Anglian Leisure’s booking system (`anglianleisure.gs-signature.cloud`). That domain returns **403 Access Forbidden** when it detects automation or too many requests. If you see that in the browser, your IP may be temporarily blocked—avoid re-running the Linton scraper from that machine for 24h and rely on Render/cron if you need Linton data.
+- The Linton scraper now detects 403 / block pages and raises a clear error instead of “no input fields found”.
+
 ## Linton Village College
 
 The `linton_village_college.py` scraper handles:

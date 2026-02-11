@@ -110,6 +110,20 @@ class LintonVillageCollegeScraper:
                     page.wait_for_load_state('networkidle', timeout=30000)
                     time.sleep(5)  # Give JavaScript plenty of time to render
                     
+                    # Detect 403 / bot-block page (Anglian Leisure uses gs-signature.cloud WAF)
+                    current_url = page.url
+                    if 'gs-signature.cloud' in current_url or '403' in current_url:
+                        try:
+                            body_text = page.locator('body').inner_text()[:500].lower()
+                        except Exception:
+                            body_text = ''
+                        if 'access forbidden' in body_text or 'immma' in body_text or '403' in body_text:
+                            raise Exception(
+                                "Booking page returned 403 (blocked by site). "
+                                "Linton uses Anglian Leisure's system, which has bot protection. "
+                                "Avoid re-running this scraper from this IP for 24h; use scheduled scrapes from Render only."
+                            )
+                    
                     # Debug: Check what's actually on the page
                     print(f"Page title: {page.title()}")
                     print(f"Page URL: {page.url}")

@@ -1,10 +1,11 @@
 """Flask API for badminton court availability."""
+import logging
+import os
 import threading
+import time
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from scraper_manager import ScraperManager
-import logging
-import os
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,11 +31,15 @@ def _run_scheduled_scrapes():
         os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
         if name.strip()
     )
+    delay_sec = int(os.getenv('SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS', '120'))
     sm = ScraperManager()
     try:
         facilities = [f for f in sm.get_facilities_list() if f not in excluded]
-        logger.info(f"Scheduled scrape started for: {facilities}")
-        for name in facilities:
+        logger.info(f"Scheduled scrape started for: {facilities} (delay between facilities: {delay_sec}s)")
+        for i, name in enumerate(facilities):
+            if i > 0 and delay_sec > 0:
+                logger.info(f"Waiting {delay_sec}s before next facility (avoid over-hitting sites)...")
+                time.sleep(delay_sec)
             try:
                 result = sm.scrape_facility(name)
                 logger.info(f"Scheduled scrape {name}: success={result.get('success')}")
@@ -130,6 +135,10 @@ def trigger_scrape():
         
     except Exception as e:
         logger.error(f"Error triggering scrape: {e}")
+        try:
+            scraper_manager.session.rollback()
+        except Exception:
+            pass
         return jsonify({
             'error': str(e)
         }), 500
