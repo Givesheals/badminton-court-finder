@@ -9,7 +9,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Static HTML/CSS/JS on GitHub Pages
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md).
+- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ## Features
 
@@ -106,18 +106,18 @@ Environment variables:
 2. Sign up at https://render.com/ (use GitHub login)
 3. Create new Web Service from your repository
 4. Select Docker runtime
-5. Set environment variables in Render dashboard (including `DATABASE_URL` for Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md))
+5. Set environment variables in Render dashboard (including `DATABASE_URL` for Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md))
 6. Deploy (auto-builds from Dockerfile)
 
-See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for detailed steps.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for architecture and env vars.
 
 ### Database (production)
 
-Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) for Neon setup; [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md) for Render Postgres (90-day expiry on free tier).
+Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md).
 
 ### Scheduled scrapes (every 6 hours)
 
-Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. Step-by-step: [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md). Overview: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) for setup and overview.
 
 ### Frontend (GitHub Pages)
 
@@ -154,14 +154,15 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── scrapers/               # Facility-specific scrapers
 │   ├── hill_roads.py
 │   ├── linton_village_college.py   # Currently excluded (broken on Render)
-│   └── one_leisure_st_ives.py
+│   ├── one_leisure_st_ives.py
+│   ├── trumpington_sport.py
+│   └── README.md           # Scraping policy and how to run
 ├── Dockerfile
 ├── requirements.txt
-├── DEPLOY_INSTRUCTIONS.md  # Deployment guide
-├── SCHEDULED_SCRAPES.md    # Every-6h scrape overview and options
-├── OPTION_A_WALKTHROUGH.md # cron-job.org setup (Option A)
+├── DEPLOYMENT.md            # Deployment architecture and env vars
+├── SCHEDULED_SCRAPES.md     # Every-6h scrape setup (cron-job.org) and overview
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
-└── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
+└── RENDER_TEST.md          # Curl commands to test production API
 ```
 
 ## Adding New Facilities

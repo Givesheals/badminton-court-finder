@@ -50,10 +50,6 @@ This project uses a split deployment architecture:
 
 4. **Access**: Your site will be at `https://[username].github.io/badminton-court-finder/`
 
-## Detailed Instructions
-
-See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
-
 ## Architecture
 
 ```
@@ -86,8 +82,8 @@ See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
        Backend API (same as above)
 ```
 
-- **Database**: Set `DATABASE_URL` on Render (e.g. Neon connection URL). See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md).
-- **Scheduled scrapes**: [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md) (cron-job.org); [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (overview).
+- **Database**: Set `DATABASE_URL` on Render (e.g. Neon connection URL). See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md).
+- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (cron-job.org setup and overview).
 
 ## Cost Breakdown
 
@@ -151,11 +147,11 @@ curl http://localhost:5000/api/facilities
 - More CPU/RAM
 - Better for regular users
 
-### Dockerfile Optimization
-The included Dockerfile is optimized for Render:
+### Dockerfile
+The included Dockerfile is set up for Render:
 - Multi-stage build for smaller image
 - Playwright browsers pre-installed
-- SQLite database persists in container
+- Use `DATABASE_URL` (Neon/Postgres) for persistent data; without it, SQLite is used (ephemeral on Render)
 - Python dependencies cached
 
 ## Monitoring
@@ -202,11 +198,8 @@ curl https://your-app-name.onrender.com/api/facility/Linton%20Village%20College/
 
 ## Database Persistence
 
-The app uses SQLite with a file-based database:
-- File: `court_availability.db`
-- Persists in Render's ephemeral storage
-- Lost on container restart (acceptable for cache)
-- For permanent storage, upgrade to PostgreSQL
+- **Production:** Set `DATABASE_URL` to a PostgreSQL URL (e.g. Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md)). Data then persists across restarts and deploys.
+- **Local / no DATABASE_URL:** The app uses SQLite (`court_availability.db`). On Render without `DATABASE_URL`, the SQLite file is ephemeral and is lost on restart.
 
 ## Rate Limiting & Budget Safety
 
@@ -259,8 +252,3 @@ GitHub Pages auto-deploys in 1-2 minutes.
 - [ ] Consider custom domain (optional)
 - [ ] Add email notifications for new availability (future)
 
-## Support
-
-For detailed step-by-step instructions, see:
-- [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) - Beginner-friendly guide
-- [RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md) - Alternative to Render (also free tier)

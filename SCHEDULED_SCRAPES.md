@@ -26,15 +26,23 @@ So 4 runs per day. Times are UTC; adjust in the cron tool if you want a differen
 
 Use a free external service to call your API every 6 hours. No extra Render service or billing.
 
-### cron-job.org (free)
+### cron-job.org (free) — step-by-step
 
-1. Sign up at [cron-job.org](https://cron-job.org).
-2. Create a new cron job:
-   - **Title:** e.g. Badminton scrape-all
-   - **URL:** `https://badminton-court-finder.onrender.com/api/scrape-all`
-   - **Method:** POST
-   - **Schedule:** Every 6 hours (or custom: minute 0, hours 0,6,12,18, day * , month * , weekday *).
-3. Save. The job will POST to your API every 6 hours.
+1. **Deploy first** so `/api/scrape-all` is live (push to GitHub, wait for Render to finish redeploying). Optional quick test: open `https://badminton-court-finder.onrender.com/health` (may take 30–60 s if app was sleeping).
+
+2. **Sign up** at [cron-job.org](https://cron-job.org) (Sign up → email/password → confirm → log in).
+
+3. **Create cron job** (Create cron job or Cron jobs → Create):
+   - **Common:** Title e.g. `Badminton court scrape-all`, **Address (URL):** `https://badminton-court-finder.onrender.com/api/scrape-all`, **Schedule:** Every 6 hours or Custom: Minute `0`, Hour `0,6,12,18`, Day `*`, Month `*`, Weekday `*`
+   - **Headers:** Add **Key** `Content-Type`, **Value** `application/json`
+   - **Advanced:** **Request method** = **POST** (not GET), Request body empty, Timeout 30 s
+   - Click **CREATE** / **Save**.
+
+4. **Confirm:** Job is Enabled. Test with `curl -X POST https://badminton-court-finder.onrender.com/api/scrape-all -H "Content-Type: application/json"` — expect `202 Accepted`. Check Render → Logs for “Scheduled scrape started for: …”.
+
+**Checklist:** Signed up at cron-job.org → Created job (URL, schedule every 6h, Content-Type header, method POST) → Job enabled → Saw “Scheduled scrape started for: …” in Render logs.
+
+**Testing Linton from Render (if your IP is blocked):** Run a one-off scrape on Render: `curl --max-time 900 -X POST https://badminton-court-finder.onrender.com/api/scrape -H "Content-Type: application/json" -d '{"facility":"Linton Village College"}'`. Ensure `LVC_USERNAME` and `LVC_PASSWORD` are set in Render → Environment. Check Render Logs for scraper output.
 
 ### Other options
 
