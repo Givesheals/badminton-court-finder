@@ -1,6 +1,8 @@
 # Quick Setup Guide
 
-Follow these steps to get your badminton court finder live!
+**First time on the project?** Do the full local setup first: [GETTING_STARTED.md](GETTING_STARTED.md). This guide covers **connecting the frontend to your Render backend** and **GitHub Pages**.
+
+The main frontend is **Streamlit** (`streamlit run streamlit_app.py`). You can set the backend API URL in the app under **Settings**. The static `index.html` is a fallback for GitHub Pages.
 
 ## Step 1: Get Your Render URL
 

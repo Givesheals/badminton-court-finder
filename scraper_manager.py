@@ -3,13 +3,20 @@ import os
 from datetime import datetime, timedelta
 from database import init_db, get_session, Facility, CourtAvailability
 from scrapers.linton_village_college import LintonVillageCollegeScraper
+from scrapers.linton_agent_scraper import LintonAgentScraper
 from scrapers.hill_roads import HillRoadsScraper
+from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
 from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
 from scrapers.trumpington_sport import TrumpingtonSportScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Facilities that use the agent (LLM) scraper instead of fixed-selector scrapers
+def _agent_scrape_facilities():
+    raw = os.getenv("AGENT_SCRAPE_FACILITIES", "")
+    return {name.strip() for name in raw.split(",") if name.strip()}
 
 
 class ScraperManager:
@@ -24,9 +31,14 @@ class ScraperManager:
     def __init__(self):
         self.db_engine = init_db()
         self.session = get_session(self.db_engine)
+        agent_facilities = _agent_scrape_facilities()
+        linton_class = LintonAgentScraper if "Linton Village College" in agent_facilities else LintonVillageCollegeScraper
+        hill_roads_class = HillRoadsAgentScraper if "Hill Roads Sport and Tennis Centre" in agent_facilities else HillRoadsScraper
+        if agent_facilities:
+            logger.info("Using agent (LLM) scraper for: %s", list(agent_facilities))
         self.scrapers = {
-            'Linton Village College': LintonVillageCollegeScraper,
-            'Hill Roads Sport and Tennis Centre': HillRoadsScraper,
+            'Linton Village College': linton_class,
+            'Hill Roads Sport and Tennis Centre': hill_roads_class,
             'One Leisure St Ives': OneLeisureStIvesScraper,
             'Trumpington Sport': TrumpingtonSportScraper,
         }

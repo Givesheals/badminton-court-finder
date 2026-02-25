@@ -107,6 +107,10 @@ See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for step-by-step guide.
 - `LVC_PASSWORD`: Linton Village College password
 - `PORT`: 5000 (Render requires this)
 
+### Optional – agent (LLM) scraping
+- `OPENAI_API_KEY`: Your OpenAI API key. Required if you use agent scraping. Add it in Render → Environment (see “Render: agent scraping” below).
+- `AGENT_SCRAPE_FACILITIES`: Comma-separated facility names that use the LLM scraper (e.g. `Hill Roads Sport and Tennis Centre` or `Linton Village College`). When set, those facilities use the agent to extract slots.
+
 ### Optional (with defaults)
 - `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: `Linton Village College`).
 - `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS`: Seconds to wait between facilities in scrape-all (default: 120). Reduces risk of being blocked by sites.
@@ -136,6 +140,23 @@ curl http://localhost:5000/api/facilities
 
 # Open index.html in browser (set API_URL to localhost)
 ```
+
+## Render: setting up agent (LLM) scraping
+
+To use the agent scraper on Render (so scrapes use the LLM to parse pages):
+
+1. **Dashboard** → open your **Web Service** (the badminton court finder backend).
+2. **Environment** (left sidebar or tab).
+3. **Add environment variable** (or “Add Variable”):
+   - **Key:** `OPENAI_API_KEY`
+   - **Value:** your OpenAI API key (starts with `sk-...`). Use the same key you put in `.env` locally. Do not share it or commit it.
+4. *(Optional)* Add:
+   - **Key:** `AGENT_SCRAPE_FACILITIES`  
+   - **Value:** `Hill Roads Sport and Tennis Centre` (to test) or `Linton Village College` (if you want Linton via the agent). Comma-separated for multiple.
+5. If you enable the agent for **Linton**, remove Linton from the *value* of `EXCLUDE_SCRAPE_FACILITIES` (or delete that variable) so scrape-all includes Linton.
+6. **Save Changes**. Render will redeploy; the new variables apply after the deploy finishes.
+
+After deploy, scheduled scrape-all (and manual POST to `/api/scrape-all`) will use the agent for any facility listed in `AGENT_SCRAPE_FACILITIES`.
 
 ## Render-Specific Notes
 

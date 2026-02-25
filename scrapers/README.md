@@ -1,6 +1,6 @@
 # Scrapers
 
-This directory contains scrapers for different sports facilities.
+This directory contains scrapers for different sports facilities. Each venue has a **fixed-selector** scraper (e.g. `hill_roads.py`, `linton_village_college.py`). Some also have an **agent (LLM) scraper** (e.g. `hill_roads_agent_scraper.py`, `linton_agent_scraper.py`) that uses the same navigation but extracts availability via OpenAI (`llm_extract.py`) for resilience to layout changes. Enable agent scrapers with env var `AGENT_SCRAPE_FACILITIES` and `OPENAI_API_KEY`; see project [README](../README.md) and [GETTING_STARTED.md](../GETTING_STARTED.md).
 
 ## Scraping policy (avoid getting blocked)
 
@@ -26,9 +26,10 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-2. Create `.env` file (copy from `.env.example`):
+2. Create `.env` from `.env.example` and add credentials (see [GETTING_STARTED.md](../GETTING_STARTED.md)):
 ```bash
 cp .env.example .env
+# Edit .env with LVC_USERNAME, LVC_PASSWORD, and optionally OPENAI_API_KEY
 ```
 
 3. Run the scraper:
@@ -43,6 +44,6 @@ The scraper saves debug files when it encounters issues:
 - `debug_login.png` - Screenshot during login
 - `debug_badminton_search.png` - Screenshot when looking for badminton interface
 - `debug_availability_page.png` - Screenshot of the availability page
-- `debug_page.html` - Full HTML of the availability page
+- `debug_*.html` – full HTML when saved (gitignored)
 
-Use these to understand the page structure and update selectors as needed.
+Use these to understand the page structure and update selectors as needed. Debug files are in `.gitignore`.

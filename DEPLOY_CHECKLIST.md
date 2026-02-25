@@ -5,7 +5,7 @@
 - [x] All files staged and pushed
 - [x] Dockerfile created
 - [x] Environment variables documented
-- [x] Frontend created (index.html)
+- [x] Frontend: Streamlit (`streamlit_app.py`) + static fallback (index.html)
 
 ## Backend Deployment (Render)
 
@@ -30,9 +30,13 @@
 Add these in the Environment section:
 
 #### Required:
-- `LVC_USERNAME` = `theparker1337@gmail.com`
-- `LVC_PASSWORD` = `CourtFinder123!`
 - `PORT` = `5000`
+- `LVC_USERNAME` / `LVC_PASSWORD` (for Linton when enabled)
+- `DATABASE_URL` = your Neon or Postgres URL (so data persists; see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md))
+
+#### Optional – agent scraping:
+- `OPENAI_API_KEY` = your OpenAI key (for LLM extraction)
+- `AGENT_SCRAPE_FACILITIES` = e.g. `Hill Roads Sport and Tennis Centre` (comma-separated)
 
 #### Optional (with defaults):
 - `FLASK_DEBUG` = `False`
@@ -54,11 +58,9 @@ curl https://your-app-name.onrender.com/api/facilities
 
 ## Frontend Deployment (GitHub Pages)
 
-### Step 1: Update API URL
-1. Open `index.html`
-2. Find the API_URL constant (around line 316)
-3. Replace with your Render URL
-4. Save file
+### Step 1: Point frontend at API
+- **Streamlit:** Run `streamlit run streamlit_app.py` and set **Backend API URL** in Settings to your Render URL.
+- **Static (index.html):** Edit the `API_URL` constant (~line 316) to your Render URL.
 
 ### Step 2: Commit Changes
 ```bash
@@ -79,7 +81,7 @@ Visit: `https://givesheals.github.io/badminton-court-finder/`
 ## After adding a new scraper (e.g. One Leisure St Ives)
 
 1. Add the scraper module under `scrapers/` and register it in `scraper_manager.py` (`self.scrapers`).
-2. Add the facility’s booking URL in `index.html` (`FACILITY_BOOKING_URLS`).
+2. Add the facility’s booking URL in `streamlit_app.py` and `index.html` (`FACILITY_BOOKING_URLS`).
 3. **Redeploy on Render** so `/api/facilities` includes the new facility:
    - Push to `main` (if auto-deploy is on), or
    - Render Dashboard → your service → **Manual Deploy** → **Deploy latest commit**.

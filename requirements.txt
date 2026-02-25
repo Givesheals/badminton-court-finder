@@ -6,3 +6,6 @@ python-dotenv==1.0.0
 flask==3.0.0
 flask-cors==4.0.0
 gunicorn==21.2.0
+streamlit==1.39.0
+requests==2.32.3
+openai>=1.0.0

@@ -1,5 +1,7 @@
 # Step-by-Step Deployment Instructions
 
+**Local setup first:** If you haven’t run the app locally yet, follow [GETTING_STARTED.md](GETTING_STARTED.md) (clone, `.env`, dependencies, run API and Streamlit). This document covers **deploying the backend to Render** and **frontend to GitHub Pages**.
+
 ## Part 1: Deploy Backend API to Render
 
 ### Step 1: Open Terminal
@@ -94,11 +96,16 @@ Scroll down to **"Environment Variables"** section and add these:
 - **Key**: `PORT`
 - **Value**: `5000`
 
+**Important – persistent database:** Add `DATABASE_URL` with your Neon (or other Postgres) connection string so data survives restarts. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md).
+
+**Optional – agent (LLM) scraping:** To use the agent scraper on Render, add `OPENAI_API_KEY` (your OpenAI key) and optionally `AGENT_SCRAPE_FACILITIES=Hill Roads Sport and Tennis Centre` (or `Linton Village College`). See [DEPLOYMENT.md](DEPLOYMENT.md) → "Render: setting up agent (LLM) scraping".
+
 **Optional Variables (have defaults):**
 - `FLASK_DEBUG` = `False`
 - `MAX_SCRAPES_PER_DAY` = `3`
 - `MAX_SCRAPES_PER_HOUR` = `1`
 - `MIN_CACHE_AGE_SECONDS` = `3600`
+- `EXCLUDE_SCRAPE_FACILITIES` = `Linton Village College` (comma-separated names to skip in scrape-all)
 
 ### Step 6: Deploy
 1. Click **"Create Web Service"** at the bottom
@@ -137,6 +144,10 @@ You should see: `{"facilities":["Linton Village College"]}`
 ## Part 3: Deploy Frontend to GitHub Pages
 
 ### Step 1: Update Frontend with Your API URL
+
+**If you use Streamlit:** Run `streamlit run streamlit_app.py` and set **Backend API URL** in the app’s **Settings** to your Render URL. No file edit needed.
+
+**If you use the static frontend (index.html):**
 1. Open `index.html` in your code editor
 2. Find line ~316 that says:
    ```javascript

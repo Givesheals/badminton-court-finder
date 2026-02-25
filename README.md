@@ -4,9 +4,11 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 
 **Live Demo**: [https://givesheals.github.io/badminton-court-finder/](https://givesheals.github.io/badminton-court-finder/)
 
+**New to the repo?** Follow **[GETTING_STARTED.md](GETTING_STARTED.md)** for full setup (clone, `.env`, run API and Streamlit).
+
 ## Current setup
 
-- **Frontend**: Static HTML/CSS/JS on GitHub Pages
+- **Frontend**: Streamlit (Python) or static HTML on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
 - **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md).
@@ -21,6 +23,8 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 
 ## Setup
 
+**New to the project?** Follow **[GETTING_STARTED.md](GETTING_STARTED.md)** for a full step-by-step (clone, `.env`, run API, run Streamlit). The steps below are a short version.
+
 ### Local Development
 
 1. Install dependencies:
@@ -32,7 +36,7 @@ playwright install chromium
 2. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env with your credentials
+# Edit .env: add OPENAI_API_KEY (for agent scraping) and any venue credentials (see .env.example)
 ```
 
 3. Run database migration (if needed):
@@ -46,6 +50,12 @@ python app.py
 ```
 
 The API will be available at `http://localhost:5000`
+
+5. **(Optional)** Run the Streamlit UI (same backend):
+```bash
+streamlit run streamlit_app.py
+```
+Open the URL shown (default `http://localhost:8501`). To use a remote backend (e.g. Render), open **Settings** and set **Backend API URL** to your API URL.
 
 ## API Endpoints
 
@@ -98,6 +108,16 @@ Environment variables:
 - `PORT`: Server port (default: 5000)
 - `FLASK_DEBUG`: Enable debug mode (default: False)
 
+### Agent (LLM) scraping (Phase 2)
+
+For facilities where the site layout changes often or fixed selectors fail (e.g. Linton Village College), you can use **LLM-based extraction**: the same Playwright navigation and login run as before, but availability is parsed from the page content using OpenAI instead of fixed CSS selectors.
+
+- `OPENAI_API_KEY`: Your OpenAI API key (required for agent scraping).
+- `AGENT_SCRAPE_FACILITIES`: Comma-separated facility names that use the agent scraper (e.g. `Linton Village College`). When set, that facility uses the LLM to extract slots from the page.
+- To scrape Linton with the agent: set `AGENT_SCRAPE_FACILITIES=Linton Village College`, set `OPENAI_API_KEY`, and **remove** Linton from `EXCLUDE_SCRAPE_FACILITIES` (or leave `EXCLUDE_SCRAPE_FACILITIES` empty) so scrape-all includes it.
+
+Install the extra dependency: `pip install openai`. The agent uses `gpt-4o-mini` by default (configurable in `scrapers/llm_extract.py`).
+
 ## Deployment
 
 ### Backend (Render)
@@ -147,18 +167,29 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 
 ```
 .
-├── index.html              # Frontend UI (GitHub Pages)
+├── GETTING_STARTED.md      # Start here – setup guide for new developers
+├── index.html              # Static frontend (GitHub Pages fallback)
+├── streamlit_app.py        # Streamlit frontend (main UI; calls Flask API)
 ├── app.py                  # Flask API (Render); /api/scrape-all for scheduled runs
-├── scraper_manager.py      # Scraper orchestration, rate limiting, purge past slots
+├── scraper_manager.py      # Scraper orchestration, rate limiting, circuit breaker
 ├── database.py             # SQLAlchemy models; Postgres (DATABASE_URL) or SQLite
 ├── scrapers/               # Facility-specific scrapers
-│   ├── hill_roads.py
-│   ├── linton_village_college.py   # Currently excluded (broken on Render)
-│   └── one_leisure_st_ives.py
+│   ├── hill_roads.py       # Hill Roads (Legend)
+│   ├── hill_roads_agent_scraper.py   # Hill Roads + LLM extraction
+│   ├── linton_village_college.py
+│   ├── linton_agent_scraper.py       # Linton + LLM extraction
+│   ├── one_leisure_st_ives.py
+│   ├── trumpington_sport.py
+│   ├── llm_extract.py      # OpenAI-based slot extraction (agent scraping)
+│   └── README.md
+├── scripts/
+│   └── test_agent_scrape.py   # Test agent scrape for Hill Roads
+├── .env.example            # Copy to .env and add your keys (do not commit .env)
 ├── Dockerfile
 ├── requirements.txt
-├── DEPLOY_INSTRUCTIONS.md  # Deployment guide
-├── SCHEDULED_SCRAPES.md    # Every-6h scrape overview and options
+├── DEPLOYMENT.md           # Deployment overview + Render env vars
+├── DEPLOY_INSTRUCTIONS.md  # Step-by-step Render + GitHub Pages
+├── SCHEDULED_SCRAPES.md    # Every-6h scrape and cron options
 ├── OPTION_A_WALKTHROUGH.md # cron-job.org setup (Option A)
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
 └── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
@@ -168,5 +199,5 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 
 1. Create a new scraper in `scrapers/` (e.g. follow `hill_roads.py` or `one_leisure_st_ives.py`).
 2. Register it in `scraper_manager.py` in the `scrapers` dict.
-3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `index.html`.
+3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `streamlit_app.py` and in `index.html`.
 4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no cron changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).
