@@ -11,7 +11,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Streamlit (Python) or static HTML on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md).
+- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ## Features
 
@@ -126,18 +126,18 @@ Install the extra dependency: `pip install openai`. The agent uses `gpt-4o-mini`
 2. Sign up at https://render.com/ (use GitHub login)
 3. Create new Web Service from your repository
 4. Select Docker runtime
-5. Set environment variables in Render dashboard (including `DATABASE_URL` for Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md))
+5. Set environment variables in Render dashboard (including `DATABASE_URL` for Neon — see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md))
 6. Deploy (auto-builds from Dockerfile)
 
-See [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) for detailed steps.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for architecture and env vars.
 
 ### Database (production)
 
-Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) for Neon setup; [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md) for Render Postgres (90-day expiry on free tier).
+Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md).
 
 ### Scheduled scrapes (every 6 hours)
 
-Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. Step-by-step: [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md). Overview: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) for setup and overview.
 
 ### Frontend (GitHub Pages)
 
