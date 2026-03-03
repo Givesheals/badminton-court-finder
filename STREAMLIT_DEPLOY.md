@@ -28,15 +28,11 @@ Ensure your repo is up to date on GitHub (`main` branch). Streamlit Cloud deploy
 
 The repo’s root **`requirements.txt`** is minimal (streamlit + requests only) so Streamlit Cloud can install it without backend-only packages (e.g. `psycopg2-binary`). Use the default requirements file; no need to set a custom path.
 
-### Step 5: Set the backend URL (required)
+### Step 5: Set the backend URL (optional)
 
-So the deployed Streamlit app talks to your Render API:
+The app **defaults** to the production API (`https://badminton-court-finder.onrender.com`), so the deployed app works without any env var. If your Render backend has a **different** URL, in **Advanced settings** add an **Environment variable** (or **Secrets**): **Key** `API_BASE_URL`, **Value** your Render URL. If you use the Secrets panel, put the value in quotes for valid TOML (e.g. `API_BASE_URL = "https://your-app.onrender.com"`). If secrets are missing or invalid, the app falls back to the default URL and still runs.
 
-1. Still in **Advanced settings**, add an **Environment variable** (or **Secrets**):
-   - **Key**: `API_BASE_URL`
-   - **Value**: `https://badminton-court-finder.onrender.com` (your actual Render URL)
-
-3. Deploy. The first run may take a few minutes.
+Deploy. The first run may take a few minutes.
 
 ### Step 6: Get your live URL
 
@@ -52,7 +48,8 @@ After deployment you’ll get a URL like `https://[your-app-name].streamlit.app`
 ## Limits and notes (Streamlit Community Cloud)
 
 - **Free tier**: Apps may sleep after inactivity; first load after sleep can be slow.
-- **Secrets**: Use Streamlit Cloud’s “Secrets” for any sensitive env vars (e.g. if you ever need an API key in the frontend; currently the app only needs `API_BASE_URL` pointing at Render).
+- **First search / after idle**: "Find Available Courts" may take around 30 seconds when the Render backend is cold (free tier). Once the backend is awake, later searches in the same session are faster until the backend sleeps again (~15 min inactivity).
+- **Secrets**: Use Streamlit Cloud’s “Secrets” for any sensitive env vars (e.g. if you ever need an API key in the frontend; currently the app only needs `API_BASE_URL` pointing at Render). Use quoted values in TOML to avoid parse errors.
 - **Backend**: Your Render backend is unchanged. Streamlit Cloud only runs the UI; all data and scraping stay on Render.
 
 ---
