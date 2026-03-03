@@ -14,6 +14,18 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
 - **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
+## Documentation
+
+| Doc | Purpose |
+|-----|---------|
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Local setup (clone, `.env`, run API and Streamlit) |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Deployment overview, env vars, troubleshooting |
+| [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) | Render + frontend deployment checklist |
+| [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) | Detailed step-by-step deployment walkthrough |
+| [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) | Deploy Streamlit app to Community Cloud |
+| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work; cron-job.org vs Render Cron |
+| [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md) | Step-by-step: set up cron-job.org (scrape-all + keep-awake) |
+
 ## Features
 
 - **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via cron
@@ -192,11 +204,12 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── Dockerfile              # Uses requirements-backend.txt (full deps for Render)
 ├── requirements.txt        # Minimal (Streamlit Cloud): streamlit + requests
 ├── requirements-backend.txt   # Full deps for API + local dev (Render, playwright, etc.)
-├── DEPLOYMENT.md           # Deployment overview + Render env vars
+├── DEPLOYMENT.md           # Deployment overview, env vars, troubleshooting
+├── DEPLOY_CHECKLIST.md     # Render + frontend deployment checklist
+├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step (Render + GitHub Pages)
 ├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
-├── DEPLOY_INSTRUCTIONS.md  # Step-by-step Render + GitHub Pages
-├── SCHEDULED_SCRAPES.md    # Every-6h scrape and cron options
-├── OPTION_A_WALKTHROUGH.md # cron-job.org setup (Option A)
+├── SCHEDULED_SCRAPES.md    # Every-6h scrapes: overview and options
+├── CRONJOB_ORG_SETUP.md    # Scheduled scrapes with cron-job.org (step-by-step)
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
 └── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
 ```

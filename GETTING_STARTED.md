@@ -68,7 +68,7 @@ Open the URL shown (default **http://localhost:8501**). You can:
 - Select days, time range, and click **Find Available Courts** (uses the API).
 - Click **Scrape all facilities** to refresh data (runs in the background).
 
-The Streamlit app uses `http://localhost:5000` as the backend by default. To use a remote backend (e.g. Render), open **Settings** in the app and set **Backend API URL**.
+The Streamlit app defaults to the production backend (Render). To use a **local** backend instead, set `API_BASE_URL=http://localhost:5000` in your `.env` or open **Settings** in the app and enter that URL in **Backend API URL**.
 
 ## Step 6: (Optional) Test scraping
 
@@ -91,7 +91,7 @@ Check that the facility gets slots in the UI or via the API.
 
 - **Deploy backend to Render**: [DEPLOYMENT.md](DEPLOYMENT.md) and [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md)
 - **Set up a persistent database (Neon)**: [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md)
-- **Scheduled scrapes (cron)**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md)
+- **Scheduled scrapes (cron)**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md)
 - **OpenAI key and agent scraping on Render**: [DEPLOYMENT.md](DEPLOYMENT.md) → “Render: setting up scraping”
 
 ## Troubleshooting
