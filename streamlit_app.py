@@ -4,14 +4,25 @@ Calls the existing Flask API (app.py) for facilities and availability.
 """
 import os
 import time
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 from datetime import datetime, timedelta
 from typing import Optional
 
 import requests
 import streamlit as st
 
-# API base URL: backend (Flask) may be on same host or Render
-API_BASE = os.getenv("API_BASE_URL", "http://localhost:5000")
+# API base URL: Streamlit Cloud Secrets panel, then env (e.g. .env), then default production (Render)
+_DEFAULT_API_BASE = "https://badminton-court-finder.onrender.com"
+try:
+    _from_secrets = st.secrets["API_BASE_URL"]
+except (KeyError, TypeError, AttributeError):
+    _from_secrets = None
+API_BASE = (_from_secrets or os.getenv("API_BASE_URL") or _DEFAULT_API_BASE).strip() or _DEFAULT_API_BASE
 
 # Booking URLs per facility (match index.html; add new facilities here)
 FACILITY_BOOKING_URLS = {
