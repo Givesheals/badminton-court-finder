@@ -1,6 +1,6 @@
 # Scheduled scrapes (every 6 hours)
 
-Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Linton Village College is excluded while that scraper is broken; all other facilities (and any you add later) are included.
+Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). All four facilities are included unless you set `EXCLUDE_SCRAPE_FACILITIES`.
 
 **Deploy first:** Push this code and let Render redeploy so the `/api/scrape-all` endpoint is live. Then set up the cron (Option A or B below).
 
@@ -8,8 +8,8 @@ Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Linto
 
 - **Endpoint:** `POST /api/scrape-all` on your Render web service.
 - **Behaviour:** Starts a background thread that scrapes every facility **except** those in `EXCLUDE_SCRAPE_FACILITIES`. Returns `202 Accepted` immediately so the caller does not time out.
-- **Excluded by default:** `Linton Village College` (env var `EXCLUDE_SCRAPE_FACILITIES`, comma-separated). Remove it when that scraper is fixed.
-- **Included:** Hill Roads Sport and Tennis Centre, One Leisure St Ives, and any new facilities you add to `scraper_manager.py`.
+- **Excluded:** None by default. Set `EXCLUDE_SCRAPE_FACILITIES` (comma-separated facility names) to skip specific facilities.
+- **Included:** All four facilities (Hill Roads, One Leisure St Ives, Linton Village College, Trumpington Sport) unless excluded.
 
 ## Schedule (every 6 hours)
 
@@ -70,9 +70,7 @@ Render Cron Jobs can run a command on a schedule. There is a **minimum $1/month*
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EXCLUDE_SCRAPE_FACILITIES` | `Linton Village College` | Comma-separated facility names to skip in scrape-all (e.g. broken scrapers). |
-
-To include Linton again later, set `EXCLUDE_SCRAPE_FACILITIES` to empty (or remove Linton from the list) and redeploy.
+| `EXCLUDE_SCRAPE_FACILITIES` | (none) | Comma-separated facility names to skip in scrape-all (opt-in only). |
 
 ---
 

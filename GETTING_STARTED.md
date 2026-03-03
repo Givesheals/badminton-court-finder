@@ -6,7 +6,7 @@ This guide gets you from zero to running the Badminton Court Finder locally. Use
 
 - **Python 3.9+** (3.10 or 3.11 is fine)
 - **Git**
-- (Optional) **OpenAI API key** – only if you want to use the agent (LLM) scraper
+- **OpenAI API key** – required for scraping (all scrapers use LLM extraction)
 
 ## Step 1: Clone the repo
 
@@ -26,13 +26,12 @@ The app reads secrets and options from a `.env` file in the project root. **Do n
    cp .env.example .env
    ```
 2. **Edit `.env`** and add your values:
-   - **`OPENAI_API_KEY`** – Required if you use agent scraping. Get a key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). Replace the placeholder with your key (starts with `sk-...`).
+   - **`OPENAI_API_KEY`** – Required for scraping. Get a key at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). Replace the placeholder with your key (starts with `sk-...`).
    - **Venue credentials** (for scrapers that need login):
      - `LVC_USERNAME` / `LVC_PASSWORD` – Linton Village College
      - `LOGIN_USERNAME` / `LOGIN_PASSWORD` – Hill Roads (and some others)
-   - Optional: `AGENT_SCRAPE_FACILITIES=Hill Roads Sport and Tennis Centre` to use the LLM scraper for that venue.
 
-If you skip `.env`, the API and Streamlit app will still run; scrapers that need credentials or the agent will fail when you trigger them.
+If you skip `.env`, the API and Streamlit app will still run; scrapers will fail when triggered (they need `OPENAI_API_KEY` and any venue credentials).
 
 ## Step 3: Install dependencies
 
@@ -69,12 +68,12 @@ Open the URL shown (default **http://localhost:8501**). You can:
 
 The Streamlit app uses `http://localhost:5000` as the backend by default. To use a remote backend (e.g. Render), open **Settings** in the app and set **Backend API URL**.
 
-## Step 6: (Optional) Test agent scraping
+## Step 6: (Optional) Test scraping
 
-If you set `OPENAI_API_KEY` and `AGENT_SCRAPE_FACILITIES=Hill Roads Sport and Tennis Centre` in `.env`:
+With `OPENAI_API_KEY` in `.env`, trigger a scrape from the Streamlit UI (e.g. "Scrape all facilities") or run:
 
 ```bash
-AGENT_SCRAPE_FACILITIES="Hill Roads Sport and Tennis Centre" python -c "
+python -c "
 from dotenv import load_dotenv
 load_dotenv()
 from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
@@ -82,7 +81,7 @@ HillRoadsAgentScraper(headless=True).scrape()
 "
 ```
 
-Or trigger a scrape from the Streamlit UI and check that Hill Roads gets slots.
+Check that the facility gets slots in the UI or via the API.
 
 ---
 
@@ -91,11 +90,11 @@ Or trigger a scrape from the Streamlit UI and check that Hill Roads gets slots.
 - **Deploy backend to Render**: [DEPLOYMENT.md](DEPLOYMENT.md) and [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md)
 - **Set up a persistent database (Neon)**: [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md)
 - **Scheduled scrapes (cron)**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [OPTION_A_WALKTHROUGH.md](OPTION_A_WALKTHROUGH.md)
-- **OpenAI key and agent scraping on Render**: [DEPLOYMENT.md](DEPLOYMENT.md) → “Render: setting up agent (LLM) scraping”
+- **OpenAI key and agent scraping on Render**: [DEPLOYMENT.md](DEPLOYMENT.md) → “Render: setting up scraping”
 
 ## Troubleshooting
 
-- **“OPENAI_API_KEY is not set”** – Add it to `.env` (and restart the app) if you use agent scraping.
+- **“OPENAI_API_KEY is not set”** – Add it to `.env` (and restart the app) it is required for scraping.
 - **“Install the openai package”** – Run `pip install -r requirements.txt`.
 - **“Executable doesn't exist” (Playwright)** – Run `playwright install chromium`.
 - **Port 5000 in use** – Start the API with `PORT=5001 python app.py` and set Backend API URL in Streamlit to `http://localhost:5001`.

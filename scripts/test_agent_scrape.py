@@ -7,10 +7,9 @@ Run an agent scrape for Hill Roads (easier venue) to test the full pipeline:
 
 Usage:
   export OPENAI_API_KEY=sk-...
-  export AGENT_SCRAPE_FACILITIES="Hill Roads Sport and Tennis Centre"
   python scripts/test_agent_scrape.py
 
-Or with .env containing OPENAI_API_KEY and AGENT_SCRAPE_FACILITIES.
+Or with .env containing OPENAI_API_KEY. All scrapers use the agent by default.
 """
 import os
 import sys
@@ -25,7 +24,6 @@ def main():
     if not os.getenv("OPENAI_API_KEY"):
         print("Set OPENAI_API_KEY in .env or environment to test LLM extraction.")
         sys.exit(1)
-    os.environ.setdefault("AGENT_SCRAPE_FACILITIES", "Hill Roads Sport and Tennis Centre")
 
     from scraper_manager import ScraperManager
     from database import get_session, init_db, Facility, CourtAvailability

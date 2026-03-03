@@ -10,10 +10,10 @@ from scraper_manager import ScraperManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Facilities to skip in scheduled scrape-all (e.g. broken scrapers). Comma-separated.
+# Facilities to skip in scheduled scrape-all (opt-in only). Comma-separated. Default: none excluded.
 EXCLUDE_SCRAPE_FACILITIES = [
     name.strip() for name in
-    os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
+    os.getenv('EXCLUDE_SCRAPE_FACILITIES', '').split(',')
     if name.strip()
 ]
 
@@ -28,7 +28,7 @@ def _run_scheduled_scrapes():
     """Background thread: scrape all facilities except EXCLUDE_SCRAPE_FACILITIES. Uses its own ScraperManager."""
     excluded = set(
         name.strip() for name in
-        os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
+        os.getenv('EXCLUDE_SCRAPE_FACILITIES', '').split(',')
         if name.strip()
     )
     delay_sec = int(os.getenv('SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS', '120'))

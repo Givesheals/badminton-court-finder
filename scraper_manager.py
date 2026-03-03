@@ -1,46 +1,38 @@
-"""Scraper manager with rate limiting and budget controls."""
+"""Scraper manager with rate limiting and budget controls.
+
+All facilities use agent (LLM) scrapers for extraction; base scrapers provide
+navigation only. Requires OPENAI_API_KEY for scraping.
+"""
 import os
 from datetime import datetime, timedelta
 from database import init_db, get_session, Facility, CourtAvailability
-from scrapers.linton_village_college import LintonVillageCollegeScraper
 from scrapers.linton_agent_scraper import LintonAgentScraper
-from scrapers.hill_roads import HillRoadsScraper
 from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
-from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
-from scrapers.trumpington_sport import TrumpingtonSportScraper
+from scrapers.one_leisure_agent_scraper import OneLeisureAgentScraper
+from scrapers.trumpington_agent_scraper import TrumpingtonAgentScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Facilities that use the agent (LLM) scraper instead of fixed-selector scrapers
-def _agent_scrape_facilities():
-    raw = os.getenv("AGENT_SCRAPE_FACILITIES", "")
-    return {name.strip() for name in raw.split(",") if name.strip()}
-
 
 class ScraperManager:
     """Manages scraping with rate limiting and budget controls."""
-    
+
     # Budget and rate limiting settings
     MAX_SCRAPES_PER_DAY = int(os.getenv('MAX_SCRAPES_PER_DAY', '3'))
     MAX_SCRAPES_PER_HOUR = int(os.getenv('MAX_SCRAPES_PER_HOUR', '1'))
     MIN_CACHE_AGE_SECONDS = int(os.getenv('MIN_CACHE_AGE_SECONDS', '3600'))  # 1 hour
     MAX_CONSECUTIVE_ERRORS = 3  # Circuit breaker threshold
-    
+
     def __init__(self):
         self.db_engine = init_db()
         self.session = get_session(self.db_engine)
-        agent_facilities = _agent_scrape_facilities()
-        linton_class = LintonAgentScraper if "Linton Village College" in agent_facilities else LintonVillageCollegeScraper
-        hill_roads_class = HillRoadsAgentScraper if "Hill Roads Sport and Tennis Centre" in agent_facilities else HillRoadsScraper
-        if agent_facilities:
-            logger.info("Using agent (LLM) scraper for: %s", list(agent_facilities))
         self.scrapers = {
-            'Linton Village College': linton_class,
-            'Hill Roads Sport and Tennis Centre': hill_roads_class,
-            'One Leisure St Ives': OneLeisureStIvesScraper,
-            'Trumpington Sport': TrumpingtonSportScraper,
+            'Linton Village College': LintonAgentScraper,
+            'Hill Roads Sport and Tennis Centre': HillRoadsAgentScraper,
+            'One Leisure St Ives': OneLeisureAgentScraper,
+            'Trumpington Sport': TrumpingtonAgentScraper,
         }
     
     def should_scrape(self, facility_name):

@@ -11,7 +11,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Streamlit (Python) or static HTML on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Hill Roads and One Leisure St Ives are scraped automatically; Linton Village College is excluded while that scraper is broken. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). All four facilities are scraped automatically unless excluded via env. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ## Features
 
@@ -36,7 +36,7 @@ playwright install chromium
 2. Set up environment variables:
 ```bash
 cp .env.example .env
-# Edit .env: add OPENAI_API_KEY (for agent scraping) and any venue credentials (see .env.example)
+# Edit .env: add OPENAI_API_KEY (required for scraping) and any venue credentials (see .env.example)
 ```
 
 3. Run database migration (if needed):
@@ -101,22 +101,19 @@ GET /api/facility/<facility_name>/stats
 
 Environment variables:
 - `DATABASE_URL`: PostgreSQL connection URL (e.g. Neon). If set, app uses Postgres; otherwise SQLite (local).
-- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: `Linton Village College`).
+- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: none).
 - `MAX_SCRAPES_PER_DAY`: Maximum scrapes per facility per day (default: 3)
 - `MAX_SCRAPES_PER_HOUR`: Maximum scrapes per facility per hour (default: 1)
 - `MIN_CACHE_AGE_SECONDS`: Minimum cache age before re-scraping (default: 3600 = 1 hour)
 - `PORT`: Server port (default: 5000)
 - `FLASK_DEBUG`: Enable debug mode (default: False)
 
-### Agent (LLM) scraping (Phase 2)
+### Scraping (LLM extraction)
 
-For facilities where the site layout changes often or fixed selectors fail (e.g. Linton Village College), you can use **LLM-based extraction**: the same Playwright navigation and login run as before, but availability is parsed from the page content using OpenAI instead of fixed CSS selectors.
+All scrapers use **Playwright for navigation** and **OpenAI (LLM) for extracting** court availability from the page content. This avoids brittle fixed selectors when sites change layout.
 
-- `OPENAI_API_KEY`: Your OpenAI API key (required for agent scraping).
-- `AGENT_SCRAPE_FACILITIES`: Comma-separated facility names that use the agent scraper (e.g. `Linton Village College`). When set, that facility uses the LLM to extract slots from the page.
-- To scrape Linton with the agent: set `AGENT_SCRAPE_FACILITIES=Linton Village College`, set `OPENAI_API_KEY`, and **remove** Linton from `EXCLUDE_SCRAPE_FACILITIES` (or leave `EXCLUDE_SCRAPE_FACILITIES` empty) so scrape-all includes it.
-
-Install the extra dependency: `pip install openai`. The agent uses `gpt-4o-mini` by default (configurable in `scrapers/llm_extract.py`).
+- `OPENAI_API_KEY`: Your OpenAI API key (required for scraping). Set it in `.env` or in Render environment.
+- Install the extra dependency: `pip install openai`. The LLM uses `gpt-4o-mini` by default (configurable in `scrapers/llm_extract.py`).
 
 ## Deployment
 
@@ -173,14 +170,16 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── app.py                  # Flask API (Render); /api/scrape-all for scheduled runs
 ├── scraper_manager.py      # Scraper orchestration, rate limiting, circuit breaker
 ├── database.py             # SQLAlchemy models; Postgres (DATABASE_URL) or SQLite
-├── scrapers/               # Facility-specific scrapers
-│   ├── hill_roads.py       # Hill Roads (Legend)
-│   ├── hill_roads_agent_scraper.py   # Hill Roads + LLM extraction
+├── scrapers/               # Facility-specific scrapers (Playwright nav + LLM extraction)
+│   ├── hill_roads.py       # Hill Roads base (navigation)
+│   ├── hill_roads_agent_scraper.py   # Hill Roads + LLM
 │   ├── linton_village_college.py
-│   ├── linton_agent_scraper.py       # Linton + LLM extraction
+│   ├── linton_agent_scraper.py
 │   ├── one_leisure_st_ives.py
+│   ├── one_leisure_agent_scraper.py
 │   ├── trumpington_sport.py
-│   ├── llm_extract.py      # OpenAI-based slot extraction (agent scraping)
+│   ├── trumpington_agent_scraper.py
+│   ├── llm_extract.py      # OpenAI-based slot extraction
 │   └── README.md
 ├── scripts/
 │   └── test_agent_scrape.py   # Test agent scrape for Hill Roads

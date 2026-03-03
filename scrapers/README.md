@@ -1,6 +1,6 @@
 # Scrapers
 
-This directory contains scrapers for different sports facilities. Each venue has a **fixed-selector** scraper (e.g. `hill_roads.py`, `linton_village_college.py`). Some also have an **agent (LLM) scraper** (e.g. `hill_roads_agent_scraper.py`, `linton_agent_scraper.py`) that uses the same navigation but extracts availability via OpenAI (`llm_extract.py`) for resilience to layout changes. Enable agent scrapers with env var `AGENT_SCRAPE_FACILITIES` and `OPENAI_API_KEY`; see project [README](../README.md) and [GETTING_STARTED.md](../GETTING_STARTED.md).
+This directory contains scrapers for different sports facilities. Each venue uses **Playwright for navigation** (e.g. `hill_roads.py`, `linton_village_college.py`, `one_leisure_st_ives.py`, `trumpington_sport.py`) and an **agent (LLM) scraper** (e.g. `hill_roads_agent_scraper.py`, `linton_agent_scraper.py`, `one_leisure_agent_scraper.py`, `trumpington_agent_scraper.py`) that extracts availability via OpenAI (`llm_extract.py`). The app uses the agent scrapers for all facilities; set `OPENAI_API_KEY` in `.env` or in Render. See project [README](../README.md) and [GETTING_STARTED.md](../GETTING_STARTED.md).
 
 ## Scraping policy (avoid getting blocked)
 
@@ -29,13 +29,14 @@ playwright install chromium
 2. Create `.env` from `.env.example` and add credentials (see [GETTING_STARTED.md](../GETTING_STARTED.md)):
 ```bash
 cp .env.example .env
-# Edit .env with LVC_USERNAME, LVC_PASSWORD, and optionally OPENAI_API_KEY
+# Edit .env with LVC_USERNAME, LVC_PASSWORD, and OPENAI_API_KEY (required for scraping)
 ```
 
-3. Run the scraper:
+3. Run the scraper (via API or manager; the agent scraper is used by default):
 ```bash
 python scrapers/linton_village_college.py
 ```
+Or trigger via the API: `POST /api/scrape` with `{"facility": "Linton Village College"}`.
 
 ### Debugging
 

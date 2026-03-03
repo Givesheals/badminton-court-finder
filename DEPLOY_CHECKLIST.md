@@ -34,9 +34,8 @@ Add these in the Environment section:
 - `LVC_USERNAME` / `LVC_PASSWORD` (for Linton when enabled)
 - `DATABASE_URL` = your Neon or Postgres URL (so data persists; see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md))
 
-#### Optional – agent scraping:
-- `OPENAI_API_KEY` = your OpenAI key (for LLM extraction)
-- `AGENT_SCRAPE_FACILITIES` = e.g. `Hill Roads Sport and Tennis Centre` (comma-separated)
+#### Required for scraping:
+- `OPENAI_API_KEY` = your OpenAI key (all scrapers use LLM extraction)
 
 #### Optional (with defaults):
 - `FLASK_DEBUG` = `False`

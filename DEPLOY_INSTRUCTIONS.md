@@ -98,14 +98,14 @@ Scroll down to **"Environment Variables"** section and add these:
 
 **Important – persistent database:** Add `DATABASE_URL` with your Neon (or other Postgres) connection string so data survives restarts. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md).
 
-**Optional – agent (LLM) scraping:** To use the agent scraper on Render, add `OPENAI_API_KEY` (your OpenAI key) and optionally `AGENT_SCRAPE_FACILITIES=Hill Roads Sport and Tennis Centre` (or `Linton Village College`). See [DEPLOYMENT.md](DEPLOYMENT.md) → "Render: setting up agent (LLM) scraping".
+**Scraping (required):** All scrapers use LLM extraction. Add `OPENAI_API_KEY` (your OpenAI key) on Render. See [DEPLOYMENT.md](DEPLOYMENT.md) → "Render: setting up scraping".
 
 **Optional Variables (have defaults):**
 - `FLASK_DEBUG` = `False`
 - `MAX_SCRAPES_PER_DAY` = `3`
 - `MAX_SCRAPES_PER_HOUR` = `1`
 - `MIN_CACHE_AGE_SECONDS` = `3600`
-- `EXCLUDE_SCRAPE_FACILITIES` = `Linton Village College` (comma-separated names to skip in scrape-all)
+- `EXCLUDE_SCRAPE_FACILITIES` = (optional; comma-separated names to skip in scrape-all; default: none)
 
 ### Step 6: Deploy
 1. Click **"Create Web Service"** at the bottom

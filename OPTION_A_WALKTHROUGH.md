@@ -64,16 +64,16 @@ Do these steps once. After that, scrapes run automatically every 6 hours (00:00,
    - You should get `202 Accepted` and “Scrapes started in background”. That’s the same request the timer will send.
 3. Wait a few seconds, then check **Last run** or **History** on cron-job.org (when you do have it) – you should see a successful request (e.g. HTTP 202).
 4. In **Render** → your **Web Service** → **Logs**, you should see lines like:
-   - `Scheduled scrape started for: ['Hill Roads Sport and Tennis Centre', 'One Leisure St Ives']`
+   - `Scheduled scrape started for: ['Hill Roads Sport and Tennis Centre', 'One Leisure St Ives', 'Linton Village College', 'Trumpington Sport']`
    - `Scheduled scrape Hill Roads Sport and Tennis Centre: success=...`
-   - `Scheduled scrape One Leisure St Ives: success=...`
+   - (and similar for the other facilities)
 
 ---
 
 ## What happens from now on
 
 - cron-job.org will **POST** to your API **every 6 hours** (00:00, 06:00, 12:00, 18:00 UTC).
-- Your app will start scrapes for **Hill Roads** and **One Leisure St Ives** (Linton is excluded until you remove it from `EXCLUDE_SCRAPE_FACILITIES`).
+- Your app will start scrapes for **all four facilities** (Hill Roads, One Leisure St Ives, Linton Village College, Trumpington Sport) unless you set `EXCLUDE_SCRAPE_FACILITIES`.
 - Any new facility you add to `scraper_manager.py` will be included automatically; only names in `EXCLUDE_SCRAPE_FACILITIES` are skipped.
 
 ---
