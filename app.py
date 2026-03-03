@@ -10,10 +10,10 @@ from scraper_manager import ScraperManager
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Facilities to skip in scheduled scrape-all (opt-in only). Comma-separated. Default: none excluded.
+# Facilities to skip in scheduled scrape-all. Comma-separated. Default: Linton (bot protection returns 403).
 EXCLUDE_SCRAPE_FACILITIES = [
     name.strip() for name in
-    os.getenv('EXCLUDE_SCRAPE_FACILITIES', '').split(',')
+    os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
     if name.strip()
 ]
 
@@ -28,7 +28,7 @@ def _run_scheduled_scrapes():
     """Background thread: scrape all facilities except EXCLUDE_SCRAPE_FACILITIES. Uses its own ScraperManager."""
     excluded = set(
         name.strip() for name in
-        os.getenv('EXCLUDE_SCRAPE_FACILITIES', '').split(',')
+        os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
         if name.strip()
     )
     delay_sec = int(os.getenv('SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS', '120'))
@@ -70,31 +70,41 @@ def get_availability():
         }), 400
     
     try:
-        result = scraper_manager.get_availability(
-            facility_name=facility_name,
-            date=date,
-            start_time=start_time,
-            end_time=end_time
-        )
-        
-        return jsonify(result), 200
-        
+        # Use a fresh manager/session per request to avoid stale DB connections (e.g. Neon serverless)
+        sm = ScraperManager()
+        try:
+            result = sm.get_availability(
+                facility_name=facility_name,
+                date=date,
+                start_time=start_time,
+                end_time=end_time
+            )
+            return jsonify(result), 200
+        finally:
+            sm.close()
     except Exception as e:
-        logger.error(f"Error getting availability: {e}")
-        return jsonify({
-            'error': str(e)
-        }), 500
+        logger.exception("Error getting availability")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/facilities', methods=['GET'])
 def get_facilities():
     """Get list of available facilities (from scrapers + DB) and last scraped time per facility."""
-    facilities = scraper_manager.get_facilities_list()
-    last_updated = scraper_manager.get_facilities_last_updated()
-    return jsonify({
-        'facilities': facilities,
-        'last_updated': last_updated
-    }), 200
+    try:
+        # Use a fresh manager/session per request to avoid stale DB connections (e.g. Neon serverless)
+        sm = ScraperManager()
+        try:
+            facilities = sm.get_facilities_list()
+            last_updated = sm.get_facilities_last_updated()
+            return jsonify({
+                'facilities': facilities,
+                'last_updated': last_updated
+            }), 200
+        finally:
+            sm.close()
+    except Exception as e:
+        logger.exception("Error getting facilities")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/scrape-all', methods=['POST'])

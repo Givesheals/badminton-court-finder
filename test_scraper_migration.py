@@ -3,8 +3,8 @@ Tests for full scraper migration to agent (LLM) technology.
 
 These tests verify that:
 - All facilities use agent scraper classes (no fixed-selector at runtime).
-- No facility is excluded by default from scheduled scrape-all.
-- Scrape-all includes all four facilities.
+- Linton Village College is excluded by default from scheduled scrape-all (bot protection).
+- Scrape-all includes the three non-excluded facilities when using default config.
 - API exposes all four facilities (front-end data path).
 """
 
@@ -39,37 +39,35 @@ def test_a_all_scrapers_are_agent_classes():
     sm.close()
 
 
-def test_b_no_facility_excluded_by_default():
-    """Default EXCLUDE_SCRAPE_FACILITIES must be empty so scrape-all runs all facilities."""
-    # Build exclude list the same way app.py does when env is unset (default '').
+def test_b_linton_excluded_by_default():
+    """Default EXCLUDE_SCRAPE_FACILITIES must include Linton (bot protection) so cron does not hit it."""
     saved = os.environ.pop("EXCLUDE_SCRAPE_FACILITIES", None)
     try:
-        raw = os.getenv("EXCLUDE_SCRAPE_FACILITIES", "")
+        raw = os.getenv("EXCLUDE_SCRAPE_FACILITIES", "Linton Village College")
         excluded = [name.strip() for name in raw.split(",") if name.strip()]
-        assert excluded == [], (
-            f"Default exclude list should be empty; got {excluded}. "
-            "app.py must use default '' for EXCLUDE_SCRAPE_FACILITIES."
+        assert "Linton Village College" in excluded, (
+            f"Default exclude list should include Linton Village College; got {excluded}."
         )
     finally:
         if saved is not None:
             os.environ["EXCLUDE_SCRAPE_FACILITIES"] = saved
 
 
-def test_c_scrape_all_includes_all_facilities():
-    """With default (empty) exclude list, scrape-all should include all four facilities."""
+def test_c_scrape_all_excludes_linton_by_default():
+    """With default config, scrape-all should include 3 facilities (Linton excluded)."""
     from scraper_manager import ScraperManager
 
     saved = os.environ.pop("EXCLUDE_SCRAPE_FACILITIES", None)
     sm = ScraperManager()
     try:
-        raw = os.getenv("EXCLUDE_SCRAPE_FACILITIES", "")
+        raw = os.getenv("EXCLUDE_SCRAPE_FACILITIES", "Linton Village College")
         excluded = set(name.strip() for name in raw.split(",") if name.strip())
         to_scrape = [f for f in sm.get_facilities_list() if f not in excluded]
-        assert len(to_scrape) == 4, (
-            f"Scrape-all should include 4 facilities when none excluded; got {len(to_scrape)}: {to_scrape}."
+        assert len(to_scrape) == 3, (
+            f"Scrape-all should include 3 facilities (Linton excluded); got {len(to_scrape)}: {to_scrape}."
         )
-        assert set(to_scrape) == EXPECTED_FACILITIES, (
-            f"Scrape-all facilities should be {EXPECTED_FACILITIES}; got {set(to_scrape)}."
+        assert "Linton Village College" not in to_scrape, (
+            "Linton Village College must not be in the scrape list when using default exclude."
         )
     finally:
         if saved is not None:
