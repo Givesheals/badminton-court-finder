@@ -1,6 +1,6 @@
 # Step-by-Step Deployment Instructions
 
-**Local setup first:** If you haven’t run the app locally yet, follow [GETTING_STARTED.md](GETTING_STARTED.md) (clone, `.env`, dependencies, run API and Streamlit). This document covers **deploying the backend to Render** and **frontend to GitHub Pages**.
+**Local setup first:** If you haven’t run the app locally yet, follow [GETTING_STARTED.md](GETTING_STARTED.md) (clone, `.env`, `pip install -r requirements-backend.txt`, run API and Streamlit). This document covers **deploying the backend to Render**, **Streamlit frontend (primary)** via [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md), and **GitHub Pages (static fallback)**.
 
 ## Part 1: Deploy Backend API to Render
 
@@ -105,7 +105,7 @@ Scroll down to **"Environment Variables"** section and add these:
 - `MAX_SCRAPES_PER_DAY` = `3`
 - `MAX_SCRAPES_PER_HOUR` = `1`
 - `MIN_CACHE_AGE_SECONDS` = `3600`
-- `EXCLUDE_SCRAPE_FACILITIES` = (optional; comma-separated names to skip in scrape-all; default: none)
+- `EXCLUDE_SCRAPE_FACILITIES` = (optional; comma-separated names to skip in scrape-all; default: Linton Village College, due to bot protection)
 
 ### Step 6: Deploy
 1. Click **"Create Web Service"** at the bottom
@@ -141,11 +141,13 @@ You should see: `{"facilities":["Linton Village College"]}`
 
 ---
 
-## Part 3: Deploy Frontend to GitHub Pages
+## Part 3: Deploy Frontend
 
-### Step 1: Update Frontend with Your API URL
+**Primary (Streamlit):** The app is live at [https://court-finder.streamlit.app](https://court-finder.streamlit.app). To deploy or redeploy, follow [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) (Streamlit Community Cloud, set `API_BASE_URL` to your Render URL).
 
-**If you use Streamlit:** Run `streamlit run streamlit_app.py` and set **Backend API URL** in the app’s **Settings** to your Render URL. No file edit needed.
+**Fallback (GitHub Pages):** Steps below.
+
+### Step 1: Update static frontend (index.html) with your API URL
 
 **If you use the static frontend (index.html):**
 1. Open `index.html` in your code editor
@@ -255,7 +257,8 @@ I'll help you fix it!
 
 After successful deployment:
 
-- **Frontend (GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
+- **Frontend (primary – Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
+- **Frontend (fallback – GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
 - **Backend API (Render)**: `https://YOUR-APP-NAME.onrender.com`
 
 Save these somewhere safe!

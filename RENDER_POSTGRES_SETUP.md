@@ -13,7 +13,7 @@ The app is already set up to use PostgreSQL when you set `DATABASE_URL`. Follow 
   1. **Rotate your DB password** (you shared the URL): Render dashboard → your **PostgreSQL** service → **Info** → **Reset database password**. Then in your **Web Service** → **Environment**, update `DATABASE_URL` with the new Internal Database URL and save (Render will redeploy).
   2. In Terminal, go to the project folder then run the script: `cd /Users/simon.parker/Developer/badminton-court-finder` then `./run_render_scrapes.sh`. Leave the terminal open; wait for each “[1/3]”, “[2/3]”, “[3/3]” to print a JSON block (can be 5–15+ min each).
   3. To see progress on the server: Render dashboard → your **Web Service** → **Logs**. You should see “Starting scrape for …” and “Successfully scraped …” (or errors) while the script runs.
-  4. When the script finishes, refresh your live site; you should see “last updated” and availability.
+  4. When the script finishes, refresh your live site (e.g. [court-finder.streamlit.app](https://court-finder.streamlit.app)); you should see “last updated” and availability.
 
 ---
 
@@ -64,7 +64,7 @@ After the redeploy finishes:
    ```
    If you opened Terminal from Cursor or from the project in Finder, you may already be in that folder — then you only need `./run_render_scrapes.sh`. If you see “no such file or directory”, run the `cd` line first.
 2. **Important:** Each scrape runs on Render and can take **5–15+ minutes**. The script sends one request per facility and waits for the server to finish that scrape before continuing. You may see no new output for 10–20 minutes — that is normal. Do not close the terminal. The script will print JSON when each scrape completes (or times out after 20 min).
-3. When all three finish, refresh your live site. You should see “last updated” times and availability, and they will stay after restarts.
+3. When all three finish, refresh your live site (e.g. [court-finder.streamlit.app](https://court-finder.streamlit.app)). You should see “last updated” times and availability, and they will stay after restarts.
 
 If you want to confirm the server is working, open your **Web Service** in Render → **Logs**, and watch for “Starting scrape for …” and “Successfully scraped …” while the script runs.
 

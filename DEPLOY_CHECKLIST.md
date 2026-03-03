@@ -5,7 +5,7 @@
 - [x] All files staged and pushed
 - [x] Dockerfile created
 - [x] Environment variables documented
-- [x] Frontend: Streamlit (`streamlit_app.py`) + static fallback (index.html)
+- [x] Frontend: Streamlit on Community Cloud ([court-finder.streamlit.app](https://court-finder.streamlit.app)) + static fallback (index.html on GitHub Pages)
 
 ## Backend Deployment (Render)
 
@@ -55,10 +55,14 @@ curl https://your-app-name.onrender.com/health
 curl https://your-app-name.onrender.com/api/facilities
 ```
 
-## Frontend Deployment (GitHub Pages)
+## Frontend Deployment
+
+### Option A: Streamlit (primary)
+Live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. Deploy or redeploy via [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md): connect repo to Streamlit Community Cloud, main file `streamlit_app.py`, set `API_BASE_URL` to your Render URL. Root `requirements.txt` is minimal (streamlit + requests) so no config needed.
+
+### Option B: GitHub Pages (static fallback)
 
 ### Step 1: Point frontend at API
-- **Streamlit:** Run `streamlit run streamlit_app.py` and set **Backend API URL** in Settings to your Render URL.
 - **Static (index.html):** Edit the `API_URL` constant (~line 316) to your Render URL.
 
 ### Step 2: Commit Changes
@@ -75,7 +79,8 @@ git push origin main
 4. Wait 1-2 minutes for deployment
 
 ### Step 4: Test Frontend
-Visit: `https://givesheals.github.io/badminton-court-finder/`
+- **Streamlit (primary):** [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
+- **GitHub Pages (fallback):** `https://givesheals.github.io/badminton-court-finder/`
 
 ## After adding a new scraper (e.g. One Leisure St Ives)
 
@@ -110,6 +115,7 @@ Visit: `https://givesheals.github.io/badminton-court-finder/`
 - GitHub Pages: Usually just works, check browser console if issues
 
 ### Cost Monitoring
+- Streamlit Community Cloud: FREE
 - Render Free Tier: $0/month (with sleep)
 - Render Basic: $7/month (always-on)
 - GitHub Pages: FREE forever
@@ -137,8 +143,9 @@ Visit: `https://givesheals.github.io/badminton-court-finder/`
 
 After deployment, save these:
 
-- **Frontend**: `https://givesheals.github.io/badminton-court-finder/`
-- **Backend**: `https://[your-app-name].onrender.com`
+- **Frontend (primary – Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
+- **Frontend (fallback – GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
+- **Backend (Render)**: `https://[your-app-name].onrender.com`
 
 ## Budget Safety
 

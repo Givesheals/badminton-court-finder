@@ -2,13 +2,14 @@
 
 A web app to find available badminton courts in Cambridge by aggregating availability from multiple sports facilities.
 
-**Live Demo**: [https://givesheals.github.io/badminton-court-finder/](https://givesheals.github.io/badminton-court-finder/)
+**Live app (primary)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app) — Streamlit UI. **Fallback**: [GitHub Pages](https://givesheals.github.io/badminton-court-finder/) — static HTML.
 
 **New to the repo?** Follow **[GETTING_STARTED.md](GETTING_STARTED.md)** for full setup (clone, `.env`, run API and Streamlit).
 
 ## Current setup
 
-- **Frontend**: Streamlit (Python) or static HTML on GitHub Pages; both call the same Flask API.
+- **Frontend (primary)**: Streamlit on [Streamlit Community Cloud](https://share.streamlit.io) at [court-finder.streamlit.app](https://court-finder.streamlit.app). Root `requirements.txt` is minimal (streamlit + requests) for Cloud; backend/local use `requirements-backend.txt`.
+- **Frontend (fallback)**: Static `index.html` on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
 - **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
@@ -51,7 +52,7 @@ python app.py
 
 The API will be available at `http://localhost:5000`
 
-5. **(Optional)** Run the Streamlit UI (same backend):
+5. Run the Streamlit frontend (main UI):
 ```bash
 streamlit run streamlit_app.py
 ```
@@ -136,14 +137,18 @@ Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to
 
 Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) for setup and overview.
 
-### Frontend (GitHub Pages)
+### Frontend (Streamlit – primary)
+
+Live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. To deploy or redeploy: see **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** (Streamlit Community Cloud, set `API_BASE_URL` to your Render URL). Root `requirements.txt` is minimal so Cloud installs without backend deps.
+
+### Frontend (GitHub Pages – fallback)
 
 1. Update API URL in `index.html` with your Render URL
 2. Push to GitHub
 3. Enable GitHub Pages in repository Settings → Pages
 4. Select main branch, root folder
 
-Your site will be live at: `https://[username].github.io/badminton-court-finder/`
+Your site will be at: `https://[username].github.io/badminton-court-finder/`
 
 ### Docker (Local Testing)
 
@@ -184,9 +189,11 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── scripts/
 │   └── test_agent_scrape.py   # Test agent scrape for Hill Roads
 ├── .env.example            # Copy to .env and add your keys (do not commit .env)
-├── Dockerfile
-├── requirements.txt
+├── Dockerfile              # Uses requirements-backend.txt (full deps for Render)
+├── requirements.txt        # Minimal (Streamlit Cloud): streamlit + requests
+├── requirements-backend.txt   # Full deps for API + local dev (Render, playwright, etc.)
 ├── DEPLOYMENT.md           # Deployment overview + Render env vars
+├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
 ├── DEPLOY_INSTRUCTIONS.md  # Step-by-step Render + GitHub Pages
 ├── SCHEDULED_SCRAPES.md    # Every-6h scrape and cron options
 ├── OPTION_A_WALKTHROUGH.md # cron-job.org setup (Option A)

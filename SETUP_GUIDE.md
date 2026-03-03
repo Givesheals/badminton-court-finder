@@ -2,7 +2,7 @@
 
 **First time on the project?** Do the full local setup first: [GETTING_STARTED.md](GETTING_STARTED.md). This guide covers **connecting the frontend to your Render backend** and **GitHub Pages**.
 
-The main frontend is **Streamlit** (`streamlit run streamlit_app.py`). You can set the backend API URL in the app under **Settings**. The static `index.html` is a fallback for GitHub Pages.
+The **primary frontend** is the Streamlit app, live at [https://court-finder.streamlit.app](https://court-finder.streamlit.app). Locally run `streamlit run streamlit_app.py` and set the backend API URL under **Settings**. The static `index.html` on GitHub Pages is a fallback.
 
 ## Step 1: Get Your Render URL
 
@@ -53,8 +53,9 @@ curl https://your-app-name.onrender.com/health
 curl https://your-app-name.onrender.com/api/facilities
 ```
 
-### Test Frontend (GitHub Pages)
-Open in browser: `https://givesheals.github.io/badminton-court-finder/`
+### Test Frontend
+- **Streamlit (primary)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
+- **GitHub Pages (fallback)**: `https://givesheals.github.io/badminton-court-finder/`
 
 Try:
 1. Select a few days
@@ -86,10 +87,11 @@ Try:
 Once everything works:
 
 1. **Bookmark your URLs**:
-   - Frontend: `https://givesheals.github.io/badminton-court-finder/`
-   - Backend: `https://your-app-name.onrender.com`
+   - **Primary frontend (Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
+   - **Fallback frontend**: `https://givesheals.github.io/badminton-court-finder/`
+   - **Backend**: `https://your-app-name.onrender.com`
 
-2. **Share with friends**: Send them the GitHub Pages URL
+2. **Share with testers**: Send them the Streamlit URL (primary) or the GitHub Pages URL (fallback)
 
 3. **Monitor usage**: Check Render dashboard occasionally
 
@@ -97,6 +99,7 @@ Once everything works:
 
 ## Cost Summary
 
+- **Streamlit Community Cloud**: FREE ✅
 - **GitHub Pages**: FREE forever ✅
 - **Render Free Tier**: FREE (with cold starts) ✅
 - **Render Basic**: $7/month (always-on) - upgrade if needed

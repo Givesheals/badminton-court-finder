@@ -1,6 +1,6 @@
 # Deploy Streamlit as the Live Frontend
 
-The **main UI** for Badminton Court Finder is the Streamlit app (`streamlit_app.py`). It was built as the primary frontend, but only the static `index.html` was ever deployed to GitHub Pages. This guide gets the Streamlit app live so users can use it at a public URL.
+The **main UI** for Badminton Court Finder is the Streamlit app (`streamlit_app.py`). It is **live** at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. This guide describes how it was deployed and how to redeploy or replicate (Streamlit Community Cloud).
 
 ## Option: Streamlit Community Cloud (recommended, free)
 
@@ -40,11 +40,7 @@ So the deployed Streamlit app talks to your Render API:
 
 ### Step 6: Get your live URL
 
-After deployment you’ll get a URL like:
-
-**https://[your-app-name].streamlit.app**
-
-That is your **live Streamlit frontend**. Share this with testers; they get the full UI (day picker, time range, “Find Available Courts”, “Scrape all facilities”, Settings).
+After deployment you’ll get a URL like `https://[your-app-name].streamlit.app`. The current app is **https://court-finder.streamlit.app**. Share this with testers; they get the full UI (day picker, time range, “Find Available Courts”, “Scrape all facilities”, Settings).
 
 ### Step 7: (Optional) Set as primary in docs
 

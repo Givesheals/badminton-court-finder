@@ -2,6 +2,8 @@
 
 This guide gets you from zero to running the Badminton Court Finder locally. Use it with Cursor or any editor.
 
+**Live app:** The Streamlit UI is at [https://court-finder.streamlit.app](https://court-finder.streamlit.app); the static fallback is on [GitHub Pages](https://givesheals.github.io/badminton-court-finder/).
+
 ## What you need
 
 - **Python 3.9+** (3.10 or 3.11 is fine)

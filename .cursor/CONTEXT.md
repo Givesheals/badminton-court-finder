@@ -4,7 +4,7 @@
 A web app that aggregates badminton court availability across Cambridge facilities so users can search one interface (e.g. "What courts are free Wednesday evening?") instead of checking many different booking sites.
 
 ## Tech Stack
-- **Frontend**: Streamlit (`streamlit_app.py`) – main UI. Optional static `index.html` on GitHub Pages.
+- **Frontend**: Streamlit – main UI, live at [court-finder.streamlit.app](https://court-finder.streamlit.app) (Streamlit Community Cloud). Fallback: static `index.html` on GitHub Pages.
 - **Backend**: Flask API (`app.py`) on Render (Docker). Same API serves both UIs.
 - **Database**: Neon PostgreSQL (production); SQLite (local). SQLAlchemy in `database.py`.
 - **Scraping**: Playwright per-venue scrapers in `scrapers/`; all use **LLM extraction** via OpenAI (`scrapers/llm_extract.py`, `*_agent_scraper.py`).
@@ -18,8 +18,9 @@ A web app that aggregates badminton court availability across Cambridge faciliti
 - **Scrape-all**: Runs three facilities by default (Linton excluded via `EXCLUDE_SCRAPE_FACILITIES`, default: Linton Village College — bot protection). Rate limits and circuit breaker in `scraper_manager.py`.
 
 ## Key Files
-- `GETTING_STARTED.md` – setup for new devs
+- `GETTING_STARTED.md` – setup for new devs (use `requirements-backend.txt` for local/API)
 - `streamlit_app.py` – Streamlit UI; `index.html` – static fallback
+- `requirements.txt` – minimal (streamlit + requests) for Streamlit Cloud; `requirements-backend.txt` – full deps for Render and local
 - `app.py` – Flask API; `scraper_manager.py` – scrape orchestration
 - `scrapers/llm_extract.py` – OpenAI-based slot extraction; `*_agent_scraper.py` – agent scrapers
 - `.env.example` – copy to `.env` and add keys (never commit `.env`)

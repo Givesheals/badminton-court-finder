@@ -2,8 +2,8 @@
 
 This project uses a split deployment architecture:
 - **Backend API**: Hosted on Render
-- **Frontend (primary)**: Streamlit app — deploy to [Streamlit Community Cloud](https://share.streamlit.io) so users get the full UI at a public URL. See **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** for step-by-step instructions.
-- **Frontend (fallback)**: Static `index.html` on GitHub Pages (current live URL: `https://givesheals.github.io/badminton-court-finder/`)
+- **Frontend (primary)**: Streamlit app on [Streamlit Community Cloud](https://share.streamlit.io), live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. See **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** to deploy or redeploy.
+- **Frontend (fallback)**: Static `index.html` on GitHub Pages: `https://givesheals.github.io/badminton-court-finder/`
 
 The Streamlit app is the intended main UI; the static site was deployed first and remains the fallback until Streamlit is deployed.
 
@@ -62,8 +62,8 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 ```
 ┌─────────────────────────────────────────────┐
 │  User's Browser                             │
-│  Streamlit: https://*.streamlit.app         │
-│  or fallback: givesheals.github.io/...      │
+│  Streamlit: court-finder.streamlit.app     │
+│  Fallback: givesheals.github.io/...        │
 │  (Static HTML from GitHub Pages)            │
 └────────────┬────────────────────────────────┘
              │ HTTPS API Calls
@@ -97,7 +97,8 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 
 | Service | Tier | Cost | Notes |
 |---------|------|------|-------|
-| GitHub Pages | Free | $0 | Unlimited static hosting |
+| Streamlit Community Cloud | Free | $0 | Primary frontend (court-finder.streamlit.app) |
+| GitHub Pages | Free | $0 | Static fallback |
 | Render Free | Free | $0 | Sleeps after 15min inactivity |
 | Render Basic | Paid | $7/mo | Always-on, faster |
 
@@ -257,7 +258,7 @@ GitHub Pages auto-deploys in 1-2 minutes.
 
 1. Create scraper in `scrapers/` directory
 2. Add to `scraper_manager.py`
-3. Update `FACILITY_BOOKING_URLS` in `index.html`
+3. Update `FACILITY_BOOKING_URLS` in `streamlit_app.py` and `index.html`
 4. Push to GitHub
 5. Both backend and frontend will auto-deploy
 
