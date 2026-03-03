@@ -2,7 +2,10 @@
 
 This project uses a split deployment architecture:
 - **Backend API**: Hosted on Render
-- **Frontend**: Hosted on GitHub Pages
+- **Frontend (primary)**: Streamlit app — deploy to [Streamlit Community Cloud](https://share.streamlit.io) so users get the full UI at a public URL. See **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** for step-by-step instructions.
+- **Frontend (fallback)**: Static `index.html` on GitHub Pages (current live URL: `https://givesheals.github.io/badminton-court-finder/`)
+
+The Streamlit app is the intended main UI; the static site was deployed first and remains the fallback until Streamlit is deployed.
 
 ## Quick Start
 
@@ -23,13 +26,17 @@ This project uses a split deployment architecture:
    LVC_PASSWORD=...
    PORT=5000
    ```
-   Use Neon for a free, persistent DB; see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md). Add `OPENAI_API_KEY` (required for scraping). Optional: `EXCLUDE_SCRAPE_FACILITIES` (comma-separated names to skip in scrape-all; default: none).
+   Use Neon for a free, persistent DB; see [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md). Add `OPENAI_API_KEY` (required for scraping). Optional: `EXCLUDE_SCRAPE_FACILITIES` (comma-separated; default: Linton Village College, due to bot protection).
 
 4. **Deploy**: Render will auto-build from your Dockerfile
 
 5. **Get URL**: Save your Render URL (e.g., `https://badminton-court-finder.onrender.com`)
 
-### Frontend (GitHub Pages)
+### Frontend – Option A: Streamlit (primary UI)
+
+Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** for full steps. In short: use [Streamlit Community Cloud](https://share.streamlit.io), connect the repo, set `API_BASE_URL` to your Render URL. Users then use the `*.streamlit.app` URL.
+
+### Frontend – Option B: GitHub Pages (static fallback)
 
 1. **Update API URL** in `index.html`:
    ```javascript
@@ -55,8 +62,9 @@ This project uses a split deployment architecture:
 ```
 ┌─────────────────────────────────────────────┐
 │  User's Browser                             │
-│  https://givesheals.github.io/...            │
-│  (Static HTML/CSS/JS from GitHub Pages)     │
+│  Streamlit: https://*.streamlit.app         │
+│  or fallback: givesheals.github.io/...      │
+│  (Static HTML from GitHub Pages)            │
 └────────────┬────────────────────────────────┘
              │ HTTPS API Calls
              ▼
@@ -107,7 +115,7 @@ This project uses a split deployment architecture:
 - `OPENAI_API_KEY`: Your OpenAI API key. All scrapers use LLM extraction; add it in Render → Environment (see “Render: setting up scraping” below).
 
 ### Optional (with defaults)
-- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: none).
+- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: Linton Village College, due to bot protection).
 - `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS`: Seconds to wait between facilities in scrape-all (default: 120). Reduces risk of being blocked by sites.
 - `FLASK_DEBUG`: False
 - `MAX_SCRAPES_PER_DAY`: 3
