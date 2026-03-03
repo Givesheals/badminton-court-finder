@@ -19,4 +19,5 @@ class TrumpingtonAgentScraper(TrumpingtonSportScraper):
         return extract_availability_from_page(
             page,
             facility_name=self.facility.name if self.facility else "Trumpington Sport",
+            expected_date=expected_date,
         )

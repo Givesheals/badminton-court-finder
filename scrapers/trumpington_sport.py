@@ -104,42 +104,40 @@ class TrumpingtonSportScraper:
                 page.wait_for_load_state("networkidle", timeout=30000)
                 print(f"Timetable URL: {page.url}")
 
-                # Step 8: Scrape today + 13 days (14 total). Date bar reveals one more day
-                # each time you click (TODAY → TOMORROW → 13 FEB 2026 → …). Click through
-                # to reveal and select each day.
+                # Step 8: Scrape today + 13 days (14 total). Date bar shows [prev | selected | next];
+                # resolve the tab that displays target_date (not by index) and pass expected_date into extraction.
                 all_availability = []
                 print(f"Scraping {SCRAPE_DAYS} days (click through date bar to reveal each)...")
 
                 for day_index in range(SCRAPE_DAYS):
-                    date_tabs = self._get_date_tabs(page)
-                    # Click the rightmost tab repeatedly to reveal the next day until we have a tab for this index
-                    while len(date_tabs) <= day_index:
+                    target_date = datetime.now().date() + timedelta(days=day_index)
+                    tab = self._get_tab_for_date(page, target_date)
+                    # Reveal more tabs by clicking rightmost until the tab for target_date appears
+                    max_reveal = 20
+                    while tab is None and max_reveal > 0:
+                        date_tabs = self._get_date_tabs(page)
                         if not date_tabs:
                             break
-                        prev_count = len(date_tabs)
                         try:
                             date_tabs[-1].click()
                             time.sleep(2)
                             page.wait_for_load_state("networkidle", timeout=10000)
-                            date_tabs = self._get_date_tabs(page)
-                            if len(date_tabs) <= prev_count:
-                                break  # No new tab appeared
+                            tab = self._get_tab_for_date(page, target_date)
+                            max_reveal -= 1
                         except Exception:
                             break
-                    if day_index < len(date_tabs):
-                        tab = date_tabs[day_index]
+                    if tab is not None:
                         try:
                             tab.click()
                             time.sleep(2)
                             page.wait_for_load_state("networkidle", timeout=15000)
-                            day_availability = self._extract_availability(page)
+                            day_availability = self._extract_availability(page, expected_date=target_date)
                             all_availability.extend(day_availability)
                             print(f"  Day {day_index + 1}: {len(day_availability)} slots")
                         except Exception as e:
                             print(f"  Day {day_index + 1} failed: {e}")
                         continue
-                    # Fallback: use date picker (far right of date bar) to select today + day_index
-                    target_date = datetime.now().date() + timedelta(days=day_index)
+                    # Fallback: use date picker (far right of date bar) to select target_date
                     if self._select_date_via_picker(page, target_date):
                         time.sleep(2)
                         page.wait_for_load_state("networkidle", timeout=15000)
@@ -479,9 +477,100 @@ class TrumpingtonSportScraper:
             print(f"Date tabs: {e}")
         return tabs
 
-    def _get_viewing_date(self, page):
-        """Parse the currently selected date from the timetable tab."""
+    def _parse_tab_text_to_date(self, tab_el, today):
+        """Parse tab element text to a date. Returns date or None. Handles TODAY, TOMORROW, or 'DD Mon YYYY'."""
+        months = {
+            "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+            "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+        }
+        try:
+            text = tab_el.inner_text().strip()
+            u = text.upper()
+            if u == "TODAY" or (len(text) <= 10 and "TODAY" in u):
+                return today
+            if u == "TOMORROW" or (len(text) <= 12 and "TOMORROW" in u):
+                return today + timedelta(days=1)
+            m = re.search(
+                r"(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})",
+                text,
+                re.I,
+            )
+            if m:
+                day, mon_name, year = int(m.group(1)), m.group(2), int(m.group(3))
+                mon = months.get(mon_name.capitalize()[:3])
+                if mon is not None:
+                    return datetime(year, mon, day).date()
+        except Exception:
+            pass
+        return None
+
+    def _get_tab_for_date(self, page, target_date):
+        """Return the date tab element that displays target_date, or None if not found."""
         today = datetime.now().date()
+        date_tabs = self._get_date_tabs(page)
+        for tab in date_tabs:
+            d = self._parse_tab_text_to_date(tab, today)
+            if d is not None and d == target_date:
+                return tab
+        return None
+
+    def _get_viewing_date(self, page):
+        """Parse the currently selected date from the timetable (selected tab or top-right date)."""
+        today = datetime.now().date()
+        months = {
+            "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+            "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+        }
+        date_re = re.compile(
+            r"(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})",
+            re.I,
+        )
+
+        # Prefer the tab with aria-selected="true" (the one you're viewing)
+        try:
+            selected_tab = page.locator(
+                '[role="tab"][aria-selected="true"], [aria-selected="true"]'
+            ).filter(
+                has_text=re.compile(
+                    r"TODAY|TOMORROW|\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}",
+                    re.I,
+                )
+            ).first
+            if selected_tab.is_visible(timeout=1500):
+                text = selected_tab.inner_text().strip()
+                u = text.upper()
+                if "TODAY" in u:
+                    return today, today.strftime("%A")
+                if "TOMORROW" in u:
+                    d = today + timedelta(days=1)
+                    return d, d.strftime("%A")
+                m = date_re.search(text)
+                if m:
+                    day, mon_name, year = int(m.group(1)), m.group(2), int(m.group(3))
+                    mon = months.get(mon_name.capitalize()[:3])
+                    if mon is not None:
+                        d = datetime(year, mon, day).date()
+                        return d, d.strftime("%A")
+        except Exception:
+            pass
+
+        # Fallback: date next to calendar icon (top-right) - "07 Mar 2026"
+        try:
+            top_right = page.get_by_text(re.compile(r"\d{1,2}\s+[A-Za-z]{3}\s+\d{4}")).all()
+            for el in top_right:
+                if not el.is_visible(timeout=500):
+                    continue
+                t = el.inner_text().strip()
+                m = date_re.search(t)
+                if m:
+                    day, mon_name, year = int(m.group(1)), m.group(2), int(m.group(3))
+                    mon = months.get(mon_name.capitalize()[:3])
+                    if mon is not None:
+                        d = datetime(year, mon, day).date()
+                        return d, d.strftime("%A")
+        except Exception:
+            pass
+
         try:
             selected = page.locator(
                 '[class*="active"]:has-text("TODAY"), [class*="active"]:has-text("TOMORROW"), '
@@ -505,17 +594,9 @@ class TrumpingtonSportScraper:
                     re.I,
                 )
             ).all()
-            months = {
-                "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
-                "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
-            }
             for link in date_links[:5]:
                 t = link.inner_text().strip()
-                m = re.search(
-                    r"(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+(\d{4})",
-                    t,
-                    re.I,
-                )
+                m = date_re.search(t)
                 if m:
                     day, mon_name, year = int(m.group(1)), m.group(2), int(m.group(3))
                     mon = months.get(mon_name.capitalize()[:3])

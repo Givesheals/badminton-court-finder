@@ -7,6 +7,7 @@ import json
 import os
 import re
 import logging
+from datetime import date as date_type
 from typing import Any, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,12 @@ def extract_availability_with_llm(
     page_content: str,
     facility_name: str = "facility",
     model: str = "gpt-4o-mini",
+    expected_date: Optional[date_type] = None,
 ) -> List[dict]:
     """
     Send page content to OpenAI and parse returned JSON into slot records.
     page_content: inner text or HTML snippet of the availability area.
+    expected_date: if set, all slots are for this date (YYYY-MM-DD). Use for every slot in the response.
     Returns list of dicts with date, court_number, start_time, end_time, is_available.
     """
     api_key = os.getenv("OPENAI_API_KEY")
@@ -47,8 +50,16 @@ def extract_availability_with_llm(
         )
 
     client = OpenAI(api_key=api_key)
+    date_instruction = ""
+    if expected_date is not None:
+        date_str = expected_date.strftime("%Y-%m-%d")
+        date_instruction = (
+            f"The slots on this page are for date {date_str}. "
+            "Use this date for every slot in your response.\n\n"
+        )
     user_content = (
         f"Facility: {facility_name}\n\n"
+        f"{date_instruction}"
         "Extract all bookable badminton court slots from this page content.\n\n"
         "Page content:\n"
         "---\n"
@@ -80,12 +91,13 @@ def extract_availability_with_llm(
     if not isinstance(slots, list):
         return []
 
-    # Normalize to our schema
+    # Normalize to our schema; when expected_date is set, use it for every slot
+    date_str_override = expected_date.strftime("%Y-%m-%d") if expected_date is not None else None
     result = []
     for s in slots:
         if not isinstance(s, dict):
             continue
-        date = s.get("date")
+        date = date_str_override or s.get("date")
         start = s.get("start_time")
         end = s.get("end_time")
         if not date or not start:
@@ -101,10 +113,15 @@ def extract_availability_with_llm(
     return result
 
 
-def extract_availability_from_page(page: Any, facility_name: str = "facility") -> List[dict]:
+def extract_availability_from_page(
+    page: Any,
+    facility_name: str = "facility",
+    expected_date: Optional[date_type] = None,
+) -> List[dict]:
     """
     Get availability from a Playwright page using LLM extraction.
     page: Playwright page object (sync_api) after navigating to the slots view.
+    expected_date: if set, the page is showing slots for this date; use it for every slot.
     Tries #slotsGrid first, then body.
     """
     try:
@@ -117,4 +134,6 @@ def extract_availability_from_page(page: Any, facility_name: str = "facility") -
     except Exception as e:
         logger.warning("Could not get page content for LLM: %s", e)
         content = page.locator("body").inner_text(timeout=10000)
-    return extract_availability_with_llm(content, facility_name=facility_name)
+    return extract_availability_with_llm(
+        content, facility_name=facility_name, expected_date=expected_date
+    )
