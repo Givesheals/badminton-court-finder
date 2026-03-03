@@ -36,7 +36,7 @@ If you skip `.env`, the API and Streamlit app will still run; scrapers will fail
 ## Step 3: Install dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-backend.txt
 playwright install chromium
 ```
 
@@ -95,6 +95,6 @@ Check that the facility gets slots in the UI or via the API.
 ## Troubleshooting
 
 - **“OPENAI_API_KEY is not set”** – Add it to `.env` (and restart the app) it is required for scraping.
-- **“Install the openai package”** – Run `pip install -r requirements.txt`.
+- **“Install the openai package”** – Run `pip install -r requirements-backend.txt`.
 - **“Executable doesn't exist” (Playwright)** – Run `playwright install chromium`.
 - **Port 5000 in use** – Start the API with `PORT=5001 python app.py` and set Backend API URL in Streamlit to `http://localhost:5001`.

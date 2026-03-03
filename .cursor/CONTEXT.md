@@ -11,11 +11,11 @@ A web app that aggregates badminton court availability across Cambridge faciliti
 - **Deployment**: Render (backend), cron-job.org POST to `/api/scrape-all` every 6 hours.
 
 ## For New Developers (e.g. Martin)
-**Start here:** [GETTING_STARTED.md](../GETTING_STARTED.md) – clone, `.env` (copy from `.env.example`), `pip install -r requirements.txt`, `playwright install chromium`, run `app.py` then `streamlit run streamlit_app.py`. Optional: [DEPLOYMENT.md](../DEPLOYMENT.md) for Render and agent (OpenAI) setup.
+**Start here:** [GETTING_STARTED.md](../GETTING_STARTED.md) – clone, `.env` (copy from `.env.example`), `pip install -r requirements-backend.txt`, `playwright install chromium`, run `app.py` then `streamlit run streamlit_app.py`. Optional: [DEPLOYMENT.md](../DEPLOYMENT.md) for Render and agent (OpenAI) setup.
 
 ## Current State
 - **Facilities**: Hill Roads, One Leisure St Ives, Trumpington Sport, Linton Village College. All four use agent (LLM) scrapers; `OPENAI_API_KEY` is required for scraping.
-- **Scrape-all**: Runs all four facilities unless listed in `EXCLUDE_SCRAPE_FACILITIES` (env, default: none). Rate limits and circuit breaker in `scraper_manager.py`.
+- **Scrape-all**: Runs three facilities by default (Linton excluded via `EXCLUDE_SCRAPE_FACILITIES`, default: Linton Village College — bot protection). Rate limits and circuit breaker in `scraper_manager.py`.
 
 ## Key Files
 - `GETTING_STARTED.md` – setup for new devs

@@ -22,7 +22,7 @@ The `linton_village_college.py` scraper handles:
 
 1. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-backend.txt
 playwright install chromium
 ```
 

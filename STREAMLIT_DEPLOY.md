@@ -24,14 +24,9 @@ Ensure your repo is up to date on GitHub (`main` branch). Streamlit Cloud deploy
 4. **Main file path**: `streamlit_app.py`
 5. **App URL**: You can leave the default (e.g. `badminton-court-finder.streamlit.app`) or choose a name
 
-### Step 4: Use the Streamlit-only requirements file (required)
+### Step 4: Requirements (no change needed)
 
-The main `requirements.txt` includes backend-only packages (e.g. `psycopg2-binary`, Playwright) that fail to install on Streamlit Cloud. Use the minimal requirements file instead:
-
-1. In the deploy dialog, expand **"Advanced settings"**
-2. Set **Requirements file** to: `requirements-streamlit.txt`
-
-(This file only lists `streamlit` and `requests`; the frontend does not need the database or scrapers.)
+The repo’s root **`requirements.txt`** is minimal (streamlit + requests only) so Streamlit Cloud can install it without backend-only packages (e.g. `psycopg2-binary`). Use the default requirements file; no need to set a custom path.
 
 ### Step 5: Set the backend URL (required)
 

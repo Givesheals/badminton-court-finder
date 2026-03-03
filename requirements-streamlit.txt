@@ -1,4 +1,0 @@
-# Dependencies for the Streamlit frontend only (used on Streamlit Community Cloud).
-# The app talks to the Flask API over HTTP; it does not need the database or scrapers.
-streamlit>=1.39.0
-requests>=2.32.0

@@ -24,9 +24,9 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy backend requirements (full deps; root requirements.txt is minimal for Streamlit Cloud)
+COPY requirements-backend.txt .
+RUN pip install --no-cache-dir -r requirements-backend.txt
 
 # Install Playwright browsers
 RUN python -m playwright install chromium

@@ -1,0 +1,13 @@
+# Full dependencies for the Flask API, scrapers, and local dev (Render Dockerfile + local).
+# For Streamlit Community Cloud we use root requirements.txt (minimal: streamlit + requests).
+playwright==1.40.0
+beautifulsoup4==4.12.2
+sqlalchemy==2.0.23
+psycopg2-binary==2.9.9
+python-dotenv==1.0.0
+flask==3.0.0
+flask-cors==4.0.0
+gunicorn==21.2.0
+streamlit==1.39.0
+requests==2.32.3
+openai>=1.0.0

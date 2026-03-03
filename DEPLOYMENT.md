@@ -128,7 +128,7 @@ Before deploying, test locally:
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+pip install -r requirements-backend.txt
 playwright install chromium
 
 # Run migration

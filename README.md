@@ -11,7 +11,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Streamlit (Python) or static HTML on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). All four facilities are scraped automatically unless excluded via env. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ## Features
 
@@ -29,7 +29,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 
 1. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-backend.txt
 playwright install chromium
 ```
 
@@ -101,7 +101,7 @@ GET /api/facility/<facility_name>/stats
 
 Environment variables:
 - `DATABASE_URL`: PostgreSQL connection URL (e.g. Neon). If set, app uses Postgres; otherwise SQLite (local).
-- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: none).
+- `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: Linton Village College, due to bot protection).
 - `MAX_SCRAPES_PER_DAY`: Maximum scrapes per facility per day (default: 3)
 - `MAX_SCRAPES_PER_HOUR`: Maximum scrapes per facility per hour (default: 1)
 - `MIN_CACHE_AGE_SECONDS`: Minimum cache age before re-scraping (default: 3600 = 1 hour)
