@@ -20,7 +20,8 @@ import streamlit as st
 _DEFAULT_API_BASE = "https://badminton-court-finder.onrender.com"
 try:
     _from_secrets = st.secrets["API_BASE_URL"]
-except (KeyError, TypeError, AttributeError):
+except Exception:
+    # KeyError, TypeError, StreamlitSecretNotFoundError, TomlDecodeError (e.g. malformed secrets.toml)
     _from_secrets = None
 API_BASE = (_from_secrets or os.getenv("API_BASE_URL") or _DEFAULT_API_BASE).strip() or _DEFAULT_API_BASE
 
