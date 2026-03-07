@@ -1,7 +1,7 @@
 """Scraper for One Leisure St Ives badminton court availability.
 
 Flow: land on /book → set Where/What/date/Starting from → Search → See available spaces
-→ timetable page. We only scrape the 7-day booking window (today through today+6).
+→ timetable page. We only scrape the 14-day booking window (today through today+13).
 Slot states: "Book now" = available; "This slot is unavailable" or "available to be booked on" = not available.
 """
 import os
@@ -17,7 +17,7 @@ MONTH_NAMES = {
     "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
     "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
 }
-BOOKING_WINDOW_DAYS = 7  # Can book today + 6 more days (7 days in advance)
+BOOKING_WINDOW_DAYS = 14  # Can book today + 13 more days (14 days in advance)
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import init_db, get_session, Facility, CourtAvailability
@@ -412,7 +412,7 @@ class OneLeisureStIvesScraper:
         time.sleep(2)
 
     def _extract_availability_from_timetable(self, page):
-        """Extract slots from the timetable grid for the 7-day booking window only."""
+        """Extract slots from the timetable grid for the 14-day booking window only."""
         today = datetime.now().date()
         dates_to_scrape = [today + timedelta(days=i) for i in range(BOOKING_WINDOW_DAYS)]
         all_slots = []
