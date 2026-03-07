@@ -269,7 +269,7 @@ def main():
                     )
                     for date_str, blocks in sorted(dates.items()):
                         date_obj = datetime.fromisoformat(date_str).date()
-                        slot_strs = [f"{b['court']} {b['start_time']}–{b['end_time']} ({b['duration']}h)" for b in blocks]
+                        slot_strs = [f"{b['start_time']}–{b['end_time']} ({b['duration']}h)" for b in blocks]
                         parts.append(
                             f'<div class="slots-line">'
                             f'{date_obj.strftime("%a %d %b")}: {", ".join(slot_strs)}'
