@@ -239,6 +239,8 @@ def main():
 
             if not facilities_with and not facilities_without:
                 st.info("No facilities returned from the API. Check that the backend is running and has scraped data.")
+            elif not facilities_with and facilities_without:
+                st.info("No available courts match your search. Try different days, times, or criteria (e.g. shorter block or fewer courts).")
 
             if facilities_with or facilities_without:
                 st.markdown(
