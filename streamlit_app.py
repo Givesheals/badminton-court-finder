@@ -2,6 +2,7 @@
 Streamlit frontend for Badminton Court Finder.
 Calls the existing Flask API (app.py) for facilities and availability.
 """
+import html
 import os
 import time
 
@@ -180,15 +181,6 @@ def main():
     st.title("🏸 Badminton Court Finder")
     st.caption("Find available courts across Cambridge facilities")
 
-    # API URL (optional override for dev/production)
-    with st.expander("Settings", expanded=False):
-        api_url = st.text_input(
-            "Backend API URL",
-            value=API_BASE,
-            help="URL of the Flask backend (e.g. http://localhost:5000 or your Render URL)",
-        )
-    use_api_base = api_url.strip() or API_BASE
-
     # Day selector: next 14 days, multi-select
     st.subheader("Select days you're available")
     today = datetime.now().date()
@@ -236,7 +228,7 @@ def main():
                         end_time,
                         duration_h,
                         num_courts,
-                        api_base=use_api_base,
+                        api_base=API_BASE,
                     )
                 except Exception as e:
                     st.error(f"Could not reach the API. On the free tier it may be starting up — try again in a minute.\n\nError: {e}")
@@ -248,61 +240,56 @@ def main():
             if not facilities_with and not facilities_without:
                 st.info("No facilities returned from the API. Check that the backend is running and has scraped data.")
 
+            if facilities_with or facilities_without:
+                st.markdown(
+                    "<style>"
+                    ".availability-section { background: #e8f5e9; border: 2px solid #81c784; border-radius: 8px; padding: 1.25rem 1.5rem; margin: 1rem 0 1.5rem 0; }"
+                    ".availability-section h3 { margin-top: 0; margin-bottom: 1rem; color: #2e7d32; }"
+                    ".facility-availability-block { margin-bottom: 1rem; }"
+                    ".facility-availability-block:last-child { margin-bottom: 0; }"
+                    ".facility-availability-block .facility-name { font-weight: 600; }"
+                    ".facility-availability-block .slots-line { font-size: 0.9rem; margin: 0.25rem 0 0 0; color: #1b5e20; }"
+                    ".no-availability-section { background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 0.75rem 1rem; margin: 0.5rem 0; font-size: 0.9rem; color: #616161; }"
+                    ".no-availability-section ul { margin: 0; padding-left: 1.25rem; }"
+                    "</style>",
+                    unsafe_allow_html=True,
+                )
+
             if facilities_with:
-                st.subheader(f"Available courts ({len(facilities_with)} {'facility' if len(facilities_with) == 1 else 'facilities'})")
+                n = len(facilities_with)
+                heading = f"Available courts ({n} {'facility' if n == 1 else 'facilities'})"
+                parts = [f'<div class="availability-section"><h3>{heading}</h3>']
                 for facility, dates in facilities_with:
                     last_str = format_last_updated(last_updated.get(facility))
-                    book_url = FACILITY_BOOKING_URLS.get(facility) or "#"
-                    st.markdown(f"**{facility}** — last updated: {last_str}")
-                    if book_url != "#":
-                        st.markdown(f"[Book now →]({book_url})")
+                    parts.append(
+                        f'<div class="facility-availability-block">'
+                        f'<span class="facility-name">{html.escape(facility)}</span> — last updated: {html.escape(last_str)}'
+                    )
                     for date_str, blocks in sorted(dates.items()):
                         date_obj = datetime.fromisoformat(date_str).date()
-                        st.markdown(f"_{date_obj.strftime('%A %d %B %Y')}_")
-                        for b in blocks:
-                            st.caption(f"  {b['court']} | {b['start_time']}–{b['end_time']} ({b['duration']}h)")
-                    st.divider()
+                        slot_strs = [f"{b['court']} {b['start_time']}–{b['end_time']} ({b['duration']}h)" for b in blocks]
+                        parts.append(
+                            f'<div class="slots-line">'
+                            f'{date_obj.strftime("%a %d %b")}: {", ".join(slot_strs)}'
+                            f'</div>'
+                        )
+                    parts.append("</div>")
+                parts.append("</div>")
+                st.markdown("".join(parts), unsafe_allow_html=True)
 
             if facilities_without:
-                st.subheader("No availability for selected days")
-                for facility, _ in facilities_without:
-                    last_str = format_last_updated(last_updated.get(facility))
-                    book_url = FACILITY_BOOKING_URLS.get(facility) or "#"
-                    st.markdown(f"**{facility}** — last updated: {last_str}")
-                    if book_url != "#":
-                        st.markdown(f"[Book now →]({book_url})")
-                    st.caption("No slots match your criteria. Run a scrape to refresh data or try other days.")
-                    st.divider()
-
-    # Scrape now (optional)
-    st.divider()
-    if st.button("Scrape all facilities (refresh data)"):
-        try:
-            # Longer timeout so a cold backend (e.g. Render) can wake up and respond
-            r = requests.post(f"{use_api_base}/api/scrape-all", timeout=60)
-            if r.status_code in (200, 202):
-                data = r.json()
-                if data.get("status") == "no_facilities":
-                    st.warning("No facilities to scrape (all excluded or none configured).")
-                else:
-                    facilities = data.get("facilities", [])
-                    excluded = data.get("excluded", [])
-                    st.success(
-                        data.get("message", "Scrapes started in background.") + " "
-                        + (", ".join(facilities) if facilities else "No facilities to scrape.")
-                    )
-                    if excluded:
-                        st.caption(f"Excluded (not scraped): {', '.join(excluded)}")
-                    st.info(
-                        "Scrapes run in the background and can take several minutes (each venue is scraped in turn). "
-                        "Click **Find Available Courts** again in 5–10 minutes to see updated data."
-                    )
-            else:
-                st.warning(f"API returned {r.status_code}. Check backend logs.")
-        except requests.exceptions.Timeout:
-            st.error("Request timed out. If the backend is on a free tier (e.g. Render), it may be starting up — try again in a minute.")
-        except Exception as e:
-            st.error(f"Could not trigger scrape: {e}")
+                n = len(facilities_without)
+                with st.expander(f"Facilities with no availability ({n})", expanded=False):
+                    no_avail_parts = [
+                        '<div class="no-availability-section">',
+                        "<p>No slots match your criteria for the selected days.</p>",
+                        "<ul>",
+                    ]
+                    for facility, _ in facilities_without:
+                        last_str = format_last_updated(last_updated.get(facility))
+                        no_avail_parts.append(f"<li><strong>{html.escape(facility)}</strong> — last updated: {html.escape(last_str)}</li>")
+                    no_avail_parts.append("</ul></div>")
+                    st.markdown("".join(no_avail_parts), unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
