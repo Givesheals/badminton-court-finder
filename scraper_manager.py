@@ -6,6 +6,7 @@ navigation only. Requires OPENAI_API_KEY for scraping.
 import os
 from datetime import datetime, timedelta
 from database import init_db, get_session, Facility, CourtAvailability
+from scrapers.cherry_hinton_agent_scraper import CherryHintonAgentScraper
 from scrapers.linton_agent_scraper import LintonAgentScraper
 from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
 from scrapers.one_leisure_agent_scraper import OneLeisureAgentScraper
@@ -29,6 +30,7 @@ class ScraperManager:
         self.db_engine = init_db()
         self.session = get_session(self.db_engine)
         self.scrapers = {
+            'Cherry Hinton Leisure Centre': CherryHintonAgentScraper,
             'Linton Village College': LintonAgentScraper,
             'Hill Roads Sport and Tennis Centre': HillRoadsAgentScraper,
             'One Leisure St Ives': OneLeisureAgentScraper,
