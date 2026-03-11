@@ -112,31 +112,27 @@ class CherryHintonScraper:
                 self.session.close()
 
     def _click_badminton_60(self, page):
-        """Click the Badminton 60 minutes option (not 40 minutes)."""
-        # Prefer link/button with "60" and "Badminton", avoid "40"
+        """Click the Badminton 60min option (not 40min). Page shows 'Badminton 60min'."""
+        # Match "Badminton 60min" or "Badminton 60 min" or "Badminton 60 minutes"
+        badminton_60_pattern = re.compile(r"Badminton\s+60\s*min(?:ute)?s?", re.I)
         selectors = [
-            page.get_by_role("link", name=re.compile(r"Badminton.*60|60.*minute", re.I)),
-            page.get_by_role("button", name=re.compile(r"Badminton.*60|60.*minute", re.I)),
-            page.get_by_text(re.compile(r"Badminton\s+60|60\s*minute", re.I)),
+            page.get_by_role("link", name=badminton_60_pattern),
+            page.get_by_role("button", name=badminton_60_pattern),
+            page.get_by_text(badminton_60_pattern),
+            page.locator("a").filter(has_text=re.compile(r"Badminton.*60", re.I)).filter(
+                has_not_text=re.compile(r"40", re.I)
+            ).first,
         ]
         for loc in selectors:
             try:
-                if loc.first.is_visible(timeout=3000):
+                if loc.count() and loc.first.is_visible(timeout=3000):
                     loc.first.click()
                     return
             except Exception:
                 continue
-        # Fallback: any link containing "60" and "Badminton" but not "40"
-        try:
-            link = page.locator("a").filter(has_text=re.compile(r"Badminton", re.I)).filter(
-                has_text=re.compile(r"60")
-            ).filter(has_not_text=re.compile(r"40")).first
-            if link.is_visible(timeout=3000):
-                link.click()
-                return
-        except Exception:
-            pass
-        raise Exception("Could not find 'Badminton 60 minutes' link/button")
+        raise Exception(
+            "Could not find 'Badminton 60min' link/button (Better.org may have changed the page)"
+        )
 
     def _click_day_tab(self, page, day_index):
         """Click the day tab at the given index (0 = first day, typically today). Returns True if clicked."""
