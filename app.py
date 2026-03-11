@@ -3,6 +3,7 @@ import logging
 import os
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from scraper_manager import ScraperManager
@@ -48,6 +49,46 @@ def _run_scheduled_scrapes():
     finally:
         sm.close()
     logger.info("Scheduled scrape run finished.")
+
+
+def _run_scheduled_scrapes_concurrent():
+    """Background: scrape all facilities concurrently (one thread per facility, each with its own ScraperManager)."""
+    excluded = set(
+        name.strip() for name in
+        os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
+        if name.strip()
+    )
+    sm = ScraperManager()
+    try:
+        facilities = [f for f in sm.get_facilities_list() if f not in excluded]
+        sm.close()
+    except Exception:
+        if sm:
+            sm.close()
+        raise
+    if not facilities:
+        logger.info("No facilities to scrape (all excluded or none configured).")
+        return
+    logger.info(f"Concurrent scrape started for: {facilities}")
+
+    def scrape_one(name):
+        sm_one = ScraperManager()
+        try:
+            result = sm_one.scrape_facility(name)
+            return name, result
+        finally:
+            sm_one.close()
+
+    with ThreadPoolExecutor(max_workers=len(facilities)) as executor:
+        futures = {executor.submit(scrape_one, name): name for name in facilities}
+        for future in as_completed(futures):
+            name = futures[future]
+            try:
+                _, result = future.result()
+                logger.info(f"Concurrent scrape {name}: success={result.get('success')}")
+            except Exception as e:
+                logger.error(f"Concurrent scrape {name} failed: {e}")
+    logger.info("Concurrent scrape run finished.")
 
 
 @app.route('/health', methods=['GET'])
@@ -109,7 +150,8 @@ def get_facilities():
 
 @app.route('/api/scrape-all', methods=['POST'])
 def trigger_scrape_all():
-    """Trigger scrapes for all facilities except EXCLUDE_SCRAPE_FACILITIES (e.g. broken scrapers). Runs in background; returns 202."""
+    """Trigger scrapes for all facilities except EXCLUDE_SCRAPE_FACILITIES (e.g. broken scrapers). Runs in background; returns 202.
+    Use ?concurrent=1 or JSON body {"concurrent": true} to run all scrapers concurrently instead of sequentially with delay."""
     excluded = set(EXCLUDE_SCRAPE_FACILITIES)
     facilities = [f for f in scraper_manager.get_facilities_list() if f not in excluded]
     if not facilities:
@@ -118,13 +160,21 @@ def trigger_scrape_all():
             'message': 'No facilities to scrape (all excluded or none configured)',
             'excluded': list(excluded)
         }), 200
-    thread = threading.Thread(target=_run_scheduled_scrapes, daemon=True)
+    data = request.get_json(silent=True) or {}
+    concurrent = (
+        request.args.get('concurrent', '').lower() in ('1', 'true', 'yes')
+        or data.get('concurrent') is True
+        or (isinstance(data.get('concurrent'), str) and data.get('concurrent', '').lower() in ('true', 'yes', '1'))
+    )
+    target = _run_scheduled_scrapes_concurrent if concurrent else _run_scheduled_scrapes
+    thread = threading.Thread(target=target, daemon=True)
     thread.start()
     return jsonify({
         'status': 'accepted',
-        'message': 'Scrapes started in background',
+        'message': 'Scrapes started in background (concurrent)' if concurrent else 'Scrapes started in background',
         'facilities': facilities,
-        'excluded': list(excluded)
+        'excluded': list(excluded),
+        'concurrent': concurrent
     }), 202
 
 
