@@ -1,6 +1,10 @@
 # Scrapers
 
-This directory contains scrapers for different sports facilities. Each venue uses **Playwright for navigation** (e.g. `hill_roads.py`, `linton_village_college.py`, `one_leisure_st_ives.py`, `trumpington_sport.py`) and an **agent (LLM) scraper** (e.g. `hill_roads_agent_scraper.py`, `linton_agent_scraper.py`, `one_leisure_agent_scraper.py`, `trumpington_agent_scraper.py`) that extracts availability via OpenAI (`llm_extract.py`). The app uses the agent scrapers for all facilities; set `OPENAI_API_KEY` in `.env` or in Render. See project [README](../README.md) and [GETTING_STARTED.md](../GETTING_STARTED.md).
+This directory contains scrapers for different sports facilities.
+
+**Adding a new scraper?** See **[IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md)** for patterns (cookie consent, day tabs, `expected_date`), the “same booking product, different URLs” mapping, and a step-by-step checklist.
+
+Each venue uses **Playwright for navigation** (e.g. `hill_roads.py`, `linton_village_college.py`, `one_leisure_st_ives.py`, `trumpington_sport.py`) and an **agent (LLM) scraper** (e.g. `hill_roads_agent_scraper.py`, `linton_agent_scraper.py`, `one_leisure_agent_scraper.py`, `trumpington_agent_scraper.py`) that extracts availability via OpenAI (`llm_extract.py`). The app uses the agent scrapers for all facilities; set `OPENAI_API_KEY` in `.env` or in Render. See project [README](../README.md) and [GETTING_STARTED.md](../GETTING_STARTED.md).
 
 ## Scraping policy (avoid getting blocked)
 
