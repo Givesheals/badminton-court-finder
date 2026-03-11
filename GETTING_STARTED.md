@@ -91,7 +91,7 @@ Check that the facility gets slots in the UI or via the API.
 
 - **Deploy backend to Render**: [DEPLOYMENT.md](DEPLOYMENT.md) and [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md)
 - **Set up a persistent database (Neon)**: [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md)
-- **Scheduled scrapes (cron)**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md)
+- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (GitHub Actions); legacy cron-job.org: [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md)
 - **OpenAI key and agent scraping on Render**: [DEPLOYMENT.md](DEPLOYMENT.md) → “Render: setting up scraping”
 
 ## Troubleshooting

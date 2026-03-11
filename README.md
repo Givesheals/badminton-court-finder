@@ -12,7 +12,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend (fallback)**: Static `index.html` on GitHub Pages; both call the same Flask API.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: cron-job.org POSTs to `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+- **Scheduled scrapes**: GitHub Actions triggers `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) after waking Render. Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
 
 ## Documentation
 
@@ -23,12 +23,12 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 | [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) | Render + frontend deployment checklist |
 | [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) | Detailed step-by-step deployment walkthrough |
 | [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) | Deploy Streamlit app to Community Cloud |
-| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work; cron-job.org vs Render Cron |
-| [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md) | Step-by-step: set up cron-job.org (scrape-all + keep-awake) |
+| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work; GitHub Actions (recommended) vs cron-job.org |
+| [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md) | Legacy: step-by-step cron-job.org (scrape-all + keep-awake) |
 
 ## Features
 
-- **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via cron
+- **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via GitHub Actions
 - **Hybrid caching**: Uses DB cache; scrapes triggered by schedule or manual POST
 - **Budget-safe**: Rate limiting and daily scrape limits prevent runaway costs
 - **Circuit breaker**: Stops scraping after 3 consecutive errors per facility
@@ -147,7 +147,7 @@ Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to
 
 ### Scheduled scrapes (every 6 hours)
 
-Use cron-job.org (free) to POST to `https://your-app.onrender.com/api/scrape-all` every 6 hours. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) for setup and overview.
+Use the GitHub Actions workflow (see [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md)) to trigger `POST /api/scrape-all` every 6 hours after waking Render. Set the `RENDER_APP_URL` repo secret to your Render URL.
 
 ### Frontend (Streamlit – primary)
 
@@ -209,7 +209,7 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step (Render + GitHub Pages)
 ├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
 ├── SCHEDULED_SCRAPES.md    # Every-6h scrapes: overview and options
-├── CRONJOB_ORG_SETUP.md    # Scheduled scrapes with cron-job.org (step-by-step)
+├── CRONJOB_ORG_SETUP.md    # Legacy: cron-job.org setup (step-by-step)
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
 └── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
 ```

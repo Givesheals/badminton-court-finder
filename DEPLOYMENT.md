@@ -82,8 +82,8 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 └─────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────┐
-│  cron-job.org (every 6h)                    │
-│  POST /api/scrape-all → starts all scrapes  │
+│  GitHub Actions (every 6h)                  │
+│  Wake Render → POST /api/scrape-all         │
 └────────────┬────────────────────────────────┘
              │
              ▼
@@ -91,7 +91,7 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 ```
 
 - **Database**: Set `DATABASE_URL` on Render (e.g. Neon connection URL). See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md).
-- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (cron-job.org setup and overview).
+- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (GitHub Actions workflow; set `RENDER_APP_URL` secret).
 
 ## Cost Breakdown
 

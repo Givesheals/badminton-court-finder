@@ -1,0 +1,38 @@
+# Scheduled scrapes: wake Render, then POST /api/scrape-all every 6 hours.
+# No keep-awake needed; Render can spin down between runs.
+# One-time setup: add repo secret RENDER_APP_URL = https://badminton-court-finder.onrender.com
+
+name: Scheduled scrape
+
+on:
+  schedule:
+    - cron: '0 0,6,12,18 * * *'  # 00:00, 06:00, 12:00, 18:00 UTC
+  workflow_dispatch:  # Allow manual run from Actions tab
+
+jobs:
+  trigger-scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake Render
+        run: |
+          curl -sf --max-time 120 "${{ secrets.RENDER_APP_URL }}/health" || true
+        env:
+          RENDER_APP_URL: ${{ secrets.RENDER_APP_URL }}
+
+      - name: Wait for cold start
+        run: sleep 90
+
+      - name: Trigger scrape-all
+        id: scrape
+        run: |
+          resp=$(curl -s -w "\n%{http_code}" --max-time 120 \
+            -X POST "${{ secrets.RENDER_APP_URL }}/api/scrape-all" \
+            -H "Content-Type: application/json")
+          body=$(echo "$resp" | head -n -1)
+          code=$(echo "$resp" | tail -n 1)
+          echo "HTTP $code"
+          echo "$body"
+          if [ "$code" != "202" ]; then
+            echo "Expected 202 Accepted, got $code"
+            exit 1
+          fi

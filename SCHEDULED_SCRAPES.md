@@ -2,7 +2,7 @@
 
 Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton Village College excluded due to bot protection). Set `EXCLUDE_SCRAPE_FACILITIES` to change which are skipped.
 
-**Deploy first:** Push this code and let Render redeploy so the `/api/scrape-all` endpoint is live. Then set up scheduled scrapes (cron-job.org below, or Render Cron Job).
+**Deploy first:** Push this code and let Render redeploy so the `/api/scrape-all` endpoint is live. Then set up scheduled scrapes (GitHub Actions below, or legacy cron-job.org).
 
 ## How it works
 
@@ -18,44 +18,54 @@ Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three
 - **12:00 UTC** (noon)
 - **18:00 UTC**
 
-So 4 runs per day. Times are UTC; adjust in the cron tool if you want a different timezone.
+So 4 runs per day. Times are UTC; adjust in the scheduler if you want a different timezone.
 
 ---
 
-## cron-job.org (recommended, free)
+## GitHub Actions (recommended)
 
-Use cron-job.org to call your API every 6 hours. No extra Render service or billing. **Full step-by-step:** [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md).
+The repo uses a workflow that **wakes Render** (GET `/health`), **waits 90 seconds** for cold start, then **POSTs `/api/scrape-all`**. No keep-awake job; Render can spin down between runs.
 
-### Quick setup summary
+### One-time setup
 
-1. **Deploy first** so `/api/scrape-all` is live (push to GitHub, wait for Render to finish redeploying). Optional quick test: open `https://badminton-court-finder.onrender.com/health` (may take 30–60 s if app was sleeping).
+1. **Add repo secret:** In the repo go to **Settings → Secrets and variables → Actions**. New repository secret: **Name** `RENDER_APP_URL`, **Value** `https://badminton-court-finder.onrender.com` (no trailing slash).
 
-2. **Sign up** at [cron-job.org](https://cron-job.org) (Sign up → email/password → confirm → log in).
+2. **Confirm workflow:** The workflow is in [.github/workflows/scheduled-scrape.yml](.github/workflows/scheduled-scrape.yml). It runs on the schedule above; you can also trigger it manually from the **Actions** tab (**Scheduled scrape** → **Run workflow**).
 
-3. **Create scrape-all cron job** (Create cron job or Cron jobs → Create):
-   - **Common:** Title e.g. `Badminton court scrape-all`, **Address (URL):** `https://badminton-court-finder.onrender.com/api/scrape-all`, **Schedule:** Every 6 hours or Custom: Minute `0`, Hour `0,6,12,18`, Day `*`, Month `*`, Weekday `*`
-   - **Headers:** Add **Key** `Content-Type`, **Value** `application/json`
-   - **Advanced:** **Request method** = **POST** (not GET), Request body empty, Timeout 30 s
-   - Click **CREATE** / **Save**.
+3. **If you were using cron-job.org:** Disable or delete both the scrape-all and keep-awake jobs there so scrapes are not triggered twice.
 
-4. **Create keep-awake cron job** (Create cron job again): Title e.g. `Badminton court keep-awake`, **URL:** `https://badminton-court-finder.onrender.com/health`, **Schedule:** Every 2 minutes (or every 5 minutes), **Request method:** GET. This keeps the Render service warm so the scrape-all job doesn't get 503 (cron-job.org has a 30 s max timeout).
+### Flow
 
-5. **Confirm:** Both jobs are Enabled. Test with `curl -X POST https://badminton-court-finder.onrender.com/api/scrape-all -H "Content-Type: application/json"` — expect `202 Accepted`. Check Render → Logs for “Scheduled scrape started for: …”.
+1. Workflow runs at 00:00, 06:00, 12:00, 18:00 UTC.
+2. **Wake:** GET `RENDER_APP_URL/health` (wakes Render if it was sleeping).
+3. **Wait:** 90 seconds so the next request hits a warm instance.
+4. **Trigger:** POST `RENDER_APP_URL/api/scrape-all` with `Content-Type: application/json`; expect `202 Accepted`. The job fails if the response is not 202 (e.g. 503 if Render did not wake in time).
 
-**Checklist:** Signed up at cron-job.org → Created scrape-all job (URL, every 6h, POST, Content-Type header) → Created keep-awake job (URL `/health`, every 2 min, GET) → Both enabled → Saw “Scheduled scrape started for: …” in Render logs.
+Scrapes run in the background on Render after the 202; the workflow only ensures the trigger was accepted.
 
 **Testing Linton from Render (if your IP is blocked):** Run a one-off scrape on Render: `curl --max-time 900 -X POST https://badminton-court-finder.onrender.com/api/scrape -H "Content-Type: application/json" -d '{"facility":"Linton Village College"}'`. Ensure `LVC_USERNAME` and `LVC_PASSWORD` are set in Render → Environment. Check Render Logs for scraper output.
 
-### Other options
+---
 
-- **Uptime Robot** – monitor + “custom interval” if supported.
-- **EasyCron** – free tier can hit a URL on a schedule.
+## Alternative: cron-job.org (legacy)
 
-Your web service must be reachable (Render free tier may sleep; the first request after sleep can be slow). cron-job.org has a **30 second max timeout**, so you need a **keep-awake** job: a second cron job that GETs `/health` every 2 (or 5) minutes. See [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md) for the full step-by-step (including the keep-awake job).
+Use cron-job.org to call your API every 6 hours. You need **two** jobs: one for scrape-all and one **keep-awake** (ping `/health` every 2–5 minutes), because cron-job.org has a **30 second max timeout** and Render free tier can take 30–60s to wake. **Full step-by-step:** [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md).
+
+### Quick summary
+
+1. **Deploy first** so `/api/scrape-all` is live. Optional: open `https://badminton-court-finder.onrender.com/health` (may take 30–60 s if app was sleeping).
+
+2. **Sign up** at [cron-job.org](https://cron-job.org).
+
+3. **Create scrape-all cron job:** URL `https://badminton-court-finder.onrender.com/api/scrape-all`, Schedule every 6 hours (e.g. Minute `0`, Hour `0,6,12,18`), **Request method** POST, Header `Content-Type: application/json`, Timeout 30 s.
+
+4. **Create keep-awake cron job:** URL `https://badminton-court-finder.onrender.com/health`, Schedule every 2 (or 5) minutes, GET. This keeps Render warm so the scrape-all job doesn’t get 503.
+
+5. **Confirm:** Both jobs enabled. Test with `curl -X POST https://badminton-court-finder.onrender.com/api/scrape-all -H "Content-Type: application/json"` — expect `202 Accepted`. Check Render → Logs for “Scheduled scrape started for: …”.
 
 ---
 
-## Option B: Render Cron Job
+## Option: Render Cron Job
 
 Render Cron Jobs can run a command on a schedule. There is a **minimum $1/month** per cron job.
 

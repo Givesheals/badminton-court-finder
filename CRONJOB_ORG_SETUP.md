@@ -1,4 +1,10 @@
-# Scheduled scrapes with cron-job.org
+# Scheduled scrapes with cron-job.org (legacy)
+
+**Scheduled scrapes are now triggered by GitHub Actions.** See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) for the recommended setup (wake Render, then POST `/api/scrape-all` from a workflow; no keep-awake needed).
+
+This doc is for the **legacy** cron-job.org setup if you prefer an external cron service.
+
+---
 
 Do these steps once. After that, scrapes run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC).
 
