@@ -20,6 +20,12 @@ load_dotenv()
 # Number of days to scrape (day tabs at top; site limits how far ahead)
 SCRAPE_DAYS = 6
 
+# Timeouts: use longer values on Render/slow envs (cold start, limited CPU)
+PAGE_LOAD_TIMEOUT_MS = 60000
+WAIT_FOR_CONTENT_TIMEOUT_MS = 45000   # wait for "Badminton" / activities list
+NETWORK_IDLE_AFTER_NAV_MS = 30000
+NETWORK_IDLE_PER_DAY_MS = 20000
+
 FACILITY_NAME = "Cherry Hinton Leisure Centre"
 BASE_URL = "https://bookings.better.org.uk/location/cherry-hinton/sports-hall-activities"
 
@@ -69,10 +75,12 @@ class CherryHintonScraper:
             try:
                 # Step 1: Navigate to sports hall activities
                 print(f"Navigating to {BASE_URL}...")
-                page.goto(BASE_URL, wait_until="networkidle", timeout=60000)
+                page.goto(BASE_URL, wait_until="networkidle", timeout=PAGE_LOAD_TIMEOUT_MS)
                 time.sleep(2)
-                # Wait for activities list to be visible (page may be JS-rendered)
-                page.get_by_text("Badminton", exact=False).first.wait_for(state="visible", timeout=15000)
+                # Wait for activities list to be visible (page may be JS-rendered; slow on Render)
+                page.get_by_text("Badminton", exact=False).first.wait_for(
+                    state="visible", timeout=WAIT_FOR_CONTENT_TIMEOUT_MS
+                )
                 # Dismiss cookie consent so it doesn't block clicks or navigation
                 self._dismiss_cookie_consent(page)
 
@@ -80,7 +88,7 @@ class CherryHintonScraper:
                 print("Clicking Badminton 60min...")
                 self._click_badminton_60(page)
                 time.sleep(3)
-                page.wait_for_load_state("networkidle", timeout=20000)
+                page.wait_for_load_state("networkidle", timeout=NETWORK_IDLE_AFTER_NAV_MS)
 
                 # Step 3: Scrape each day tab with expected_date to avoid one-day-written-to-all-days bug
                 all_availability = []
@@ -98,7 +106,7 @@ class CherryHintonScraper:
                         print(f"  Day {day_index + 1}: no tab found, stopping")
                         break
                     time.sleep(1)
-                    page.wait_for_load_state("networkidle", timeout=10000)
+                    page.wait_for_load_state("networkidle", timeout=NETWORK_IDLE_PER_DAY_MS)
 
                     try:
                         day_slots = self._extract_availability(page, expected_date=target_date)
@@ -157,7 +165,7 @@ class CherryHintonScraper:
         for get_loc in strategies:
             try:
                 loc = get_loc()
-                if loc.count() > 0 and loc.first.is_visible(timeout=5000):
+                if loc.count() > 0 and loc.first.is_visible(timeout=10000):
                     loc.first.click()
                     return
             except Exception:
