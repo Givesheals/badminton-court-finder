@@ -153,7 +153,15 @@ def trigger_scrape_all():
     """Trigger scrapes for all facilities except EXCLUDE_SCRAPE_FACILITIES (e.g. broken scrapers). Runs in background; returns 202.
     Use ?concurrent=1 or JSON body {"concurrent": true} to run all scrapers concurrently instead of sequentially with delay."""
     excluded = set(EXCLUDE_SCRAPE_FACILITIES)
-    facilities = [f for f in scraper_manager.get_facilities_list() if f not in excluded]
+    try:
+        sm = ScraperManager()
+        try:
+            facilities = [f for f in sm.get_facilities_list() if f not in excluded]
+        finally:
+            sm.close()
+    except Exception as e:
+        logger.exception("Error getting facilities list for scrape-all")
+        return jsonify({'error': str(e)}), 500
     if not facilities:
         return jsonify({
             'status': 'no_facilities',
@@ -183,42 +191,39 @@ def trigger_scrape():
     """Manually trigger a scrape for a facility."""
     data = request.get_json() or {}
     facility_name = data.get('facility') or request.args.get('facility')
-    
+
     if not facility_name:
         return jsonify({
             'error': 'facility parameter is required'
         }), 400
-    
+
     try:
-        result = scraper_manager.scrape_facility(facility_name)
-        return jsonify(result), 200 if result['success'] else 500
-        
-    except Exception as e:
-        logger.error(f"Error triggering scrape: {e}")
+        sm = ScraperManager()
         try:
-            scraper_manager.session.rollback()
-        except Exception:
-            pass
-        return jsonify({
-            'error': str(e)
-        }), 500
+            result = sm.scrape_facility(facility_name)
+            return jsonify(result), 200 if result['success'] else 500
+        finally:
+            sm.close()
+    except Exception as e:
+        logger.exception("Error triggering scrape: %s", e)
+        return jsonify({'error': str(e)}), 500
 
 
 @app.route('/api/facility/<facility_name>/stats', methods=['GET'])
 def get_facility_stats(facility_name):
     """Get scraping statistics for a facility."""
     try:
-        stats = scraper_manager.get_facility_stats(facility_name)
-        if not stats:
-            return jsonify({
-                'error': 'Facility not found'
-            }), 404
-        return jsonify(stats), 200
+        sm = ScraperManager()
+        try:
+            stats = sm.get_facility_stats(facility_name)
+            if not stats:
+                return jsonify({'error': 'Facility not found'}), 404
+            return jsonify(stats), 200
+        finally:
+            sm.close()
     except Exception as e:
-        logger.error(f"Error getting facility stats: {e}")
-        return jsonify({
-            'error': str(e)
-        }), 500
+        logger.exception("Error getting facility stats: %s", e)
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
