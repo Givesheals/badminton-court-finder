@@ -33,7 +33,7 @@ def _run_scheduled_scrapes():
         os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
         if name.strip()
     )
-    delay_sec = int(os.getenv('SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS', '120'))
+    delay_sec = int(os.getenv('SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS', '1'))
     sm = ScraperManager()
     try:
         facilities = [f for f in sm.get_facilities_list() if f not in excluded]

@@ -26,7 +26,7 @@ jobs:
         id: scrape
         run: |
           resp=$(curl -s -w "\n%{http_code}" --max-time 120 \
-            -X POST "${{ secrets.RENDER_APP_URL }}/api/scrape-all" \
+            -X POST "${{ secrets.RENDER_APP_URL }}/api/scrape-all?concurrent=1" \
             -H "Content-Type: application/json")
           body=$(echo "$resp" | head -n -1)
           code=$(echo "$resp" | tail -n 1)
