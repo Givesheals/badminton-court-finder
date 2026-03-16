@@ -30,6 +30,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 
 - **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via GitHub Actions
 - **Hybrid caching**: Uses DB cache; scrapes triggered by schedule or manual POST
+- **Find Available Courts**: Button only reads from the database (no scrape); results should load in seconds
 - **Budget-safe**: Rate limiting and daily scrape limits prevent runaway costs
 - **Circuit breaker**: Stops scraping after 3 consecutive errors per facility
 - **REST API**: Query court availability and trigger scrapes
@@ -69,6 +70,18 @@ The API will be available at `http://localhost:5000`
 streamlit run streamlit_app.py
 ```
 Open the URL shown (default `http://localhost:8501`). To use a remote backend (e.g. Render), open **Settings** and set **Backend API URL** to your API URL.
+
+### Running tests
+
+Tests that don't require a running server:
+
+```bash
+python3 test_find_courts_speed.py   # Speed of "find courts" API path
+python3 test_scraper_migration.py  # Scrapers and API facilities
+python3 test_cherry_hinton.py      # Cherry Hinton scraper
+```
+
+`test_api.py` hits the API over HTTP; start the API first (`python app.py`) in another terminal, then run `python3 test_api.py`.
 
 ## API Endpoints
 

@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from database import init_db
 from scraper_manager import ScraperManager
 
 logging.basicConfig(level=logging.INFO)
@@ -21,8 +22,8 @@ EXCLUDE_SCRAPE_FACILITIES = [
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend
 
-# Initialize scraper manager
-scraper_manager = ScraperManager()
+# One engine per process for read paths (find courts); avoids per-request engine/connection creation.
+db_engine = init_db()
 
 
 def _run_scheduled_scrapes():
@@ -111,8 +112,7 @@ def get_availability():
         }), 400
     
     try:
-        # Use a fresh manager/session per request to avoid stale DB connections (e.g. Neon serverless)
-        sm = ScraperManager()
+        sm = ScraperManager(engine=db_engine)
         try:
             result = sm.get_availability(
                 facility_name=facility_name,
@@ -132,8 +132,7 @@ def get_availability():
 def get_facilities():
     """Get list of available facilities (from scrapers + DB) and last scraped time per facility."""
     try:
-        # Use a fresh manager/session per request to avoid stale DB connections (e.g. Neon serverless)
-        sm = ScraperManager()
+        sm = ScraperManager(engine=db_engine)
         try:
             facilities = sm.get_facilities_list()
             last_updated = sm.get_facilities_last_updated()
@@ -154,7 +153,7 @@ def trigger_scrape_all():
     Use ?concurrent=1 or JSON body {"concurrent": true} to run all scrapers concurrently instead of sequentially with delay."""
     excluded = set(EXCLUDE_SCRAPE_FACILITIES)
     try:
-        sm = ScraperManager()
+        sm = ScraperManager(engine=db_engine)
         try:
             facilities = [f for f in sm.get_facilities_list() if f not in excluded]
         finally:
@@ -198,7 +197,7 @@ def trigger_scrape():
         }), 400
 
     try:
-        sm = ScraperManager()
+        sm = ScraperManager(engine=db_engine)
         try:
             result = sm.scrape_facility(facility_name)
             return jsonify(result), 200 if result['success'] else 500
@@ -213,7 +212,7 @@ def trigger_scrape():
 def get_facility_stats(facility_name):
     """Get scraping statistics for a facility."""
     try:
-        sm = ScraperManager()
+        sm = ScraperManager(engine=db_engine)
         try:
             stats = sm.get_facility_stats(facility_name)
             if not stats:

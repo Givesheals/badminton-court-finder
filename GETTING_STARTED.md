@@ -85,6 +85,18 @@ HillRoadsAgentScraper(headless=True).scrape()
 
 Check that the facility gets slots in the UI or via the API.
 
+## Running tests
+
+From the project root, run (no server needed for these):
+
+```bash
+python3 test_find_courts_speed.py
+python3 test_scraper_migration.py
+python3 test_cherry_hinton.py
+```
+
+See [README.md](README.md) for `test_api.py` (requires the API to be running).
+
 ---
 
 ## Next steps

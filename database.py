@@ -49,7 +49,13 @@ def init_db(db_path=None):
         # Render and others use postgres:// but SQLAlchemy 1.4+ expects postgresql://
         if database_url.startswith('postgres://'):
             database_url = database_url.replace('postgres://', 'postgresql://', 1)
-        engine = create_engine(database_url)
+        # Serverless-friendly: small pool, pre-ping to avoid stale connections (e.g. Neon).
+        engine = create_engine(
+            database_url,
+            pool_pre_ping=True,
+            pool_size=5,
+            max_overflow=2,
+        )
     else:
         path = db_path or os.getenv('DB_PATH', 'court_availability.db')
         engine = create_engine(f'sqlite:///{path}')

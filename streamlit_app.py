@@ -11,6 +11,7 @@ try:
     load_dotenv()
 except ImportError:
     pass
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -34,18 +35,31 @@ FACILITY_BOOKING_URLS = {
     "Trumpington Sport": "https://legendclub.co.uk/",
 }
 
-# Retries for cold start (e.g. Render free tier)
+# Retries for cold start (e.g. Render free tier). Only sleep on connection/5xx to avoid long waits on "find courts".
 MAX_RETRIES = 12
-RETRY_INTERVAL_SEC = 10
+RETRY_INTERVAL_SEC = 3
+
+
+def _should_retry_facilities(error: Exception, response: Optional[requests.Response]) -> bool:
+    """True if failure looks like cold start (connection/timeout or 5xx). Don't retry on 4xx."""
+    if response is not None and 400 <= response.status_code < 500:
+        return False
+    if isinstance(error, (requests.ConnectionError, requests.Timeout, OSError)):
+        return True
+    if response is not None and response.status_code >= 500:
+        return True
+    return True  # Unknown (e.g. no response) — retry to be safe
 
 
 def get_facilities(api_base: Optional[str] = None):
-    """Fetch facility list and last_updated from API. Retries on failure (e.g. Render cold start)."""
+    """Fetch facility list and last_updated from API. Retries only on connection/5xx (cold start)."""
     base = (api_base or API_BASE).rstrip("/")
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
+        last_response = None
         try:
             r = requests.get(f"{base}/api/facilities", timeout=15)
+            last_response = r
             if r.status_code != 200:
                 raise RuntimeError(f"API returned {r.status_code}")
             ct = r.headers.get("Content-Type") or ""
@@ -58,8 +72,13 @@ def get_facilities(api_base: Optional[str] = None):
             )
         except Exception as e:
             last_error = e
-            if attempt < MAX_RETRIES:
+            resp = getattr(last_error, "response", None) or last_response
+            if attempt < MAX_RETRIES and _should_retry_facilities(last_error, resp):
                 time.sleep(RETRY_INTERVAL_SEC)
+            else:
+                raise RuntimeError(
+                    f"Could not reach API after {attempt} tries. {last_error}"
+                ) from last_error
     raise RuntimeError(
         f"Could not reach API after {MAX_RETRIES} tries. {last_error}"
     ) from last_error
@@ -151,20 +170,29 @@ def format_last_updated(iso_string: Optional[str]) -> str:
 def run_search(
     selected_dates, start_time, end_time, duration_h, num_courts, api_base: Optional[str] = None
 ):
-    """Call API for each facility and each date; return results and last_updated."""
+    """Call API for each facility and each date (parallel); return results and last_updated."""
     base = (api_base or API_BASE).rstrip("/")
     facilities, last_updated = get_facilities(base)
     if not facilities:
         return {}, last_updated
 
-    results = {}
-    for facility in facilities:
-        results[facility] = {}
-        for date in selected_dates:
-            slots = get_availability(facility, date, start_time, end_time, base)
-            if not slots:
-                continue
-            blocks = find_continuous_blocks(slots, duration_h, num_courts)
+    results = {f: {} for f in facilities}
+
+    def fetch_one(facility: str, date: str):
+        slots = get_availability(facility, date, start_time, end_time, base)
+        if not slots:
+            return facility, date, None
+        blocks = find_continuous_blocks(slots, duration_h, num_courts)
+        return facility, date, blocks if blocks else None
+
+    with ThreadPoolExecutor(max_workers=min(10, len(facilities) * len(selected_dates) or 1)) as executor:
+        futures = {
+            executor.submit(fetch_one, fac, date): (fac, date)
+            for fac in facilities
+            for date in selected_dates
+        }
+        for future in as_completed(futures):
+            facility, date, blocks = future.result()
             if blocks:
                 results[facility][date] = blocks
 

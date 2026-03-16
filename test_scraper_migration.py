@@ -88,7 +88,7 @@ def test_c_scrape_all_excludes_linton_by_default():
 
 def test_d_api_returns_all_facilities():
     """GET /api/facilities must return exactly the five expected facilities (front-end data path)."""
-    from app import app, scraper_manager
+    from app import app
 
     with app.test_client() as client:
         rv = client.get("/api/facilities")

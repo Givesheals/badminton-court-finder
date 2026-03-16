@@ -26,9 +26,14 @@ class ScraperManager:
     MIN_CACHE_AGE_SECONDS = int(os.getenv('MIN_CACHE_AGE_SECONDS', '3600'))  # 1 hour
     MAX_CONSECUTIVE_ERRORS = 3  # Circuit breaker threshold
 
-    def __init__(self):
-        self.db_engine = init_db()
-        self.session = get_session(self.db_engine)
+    def __init__(self, engine=None):
+        """Create manager. If engine is provided (e.g. app-scoped), use it; else create own (e.g. background scrapes)."""
+        if engine is not None:
+            self.db_engine = engine
+            self.session = get_session(engine)
+        else:
+            self.db_engine = init_db()
+            self.session = get_session(self.db_engine)
         self.scrapers = {
             'Cherry Hinton Leisure Centre': CherryHintonAgentScraper,
             'Linton Village College': LintonAgentScraper,
@@ -222,16 +227,15 @@ class ScraperManager:
         return sorted(from_scrapers | from_db)
 
     def get_facilities_last_updated(self):
-        """Get last_scraped_at for all known facilities (for display)."""
+        """Get last_scraped_at for all known facilities (for display). Single query instead of N+1."""
         names = self.get_facilities_list()
-        result = {}
-        for name in names:
-            facility = self.session.query(Facility).filter_by(name=name).first()
-            if facility and facility.last_scraped_at:
-                result[name] = facility.last_scraped_at.isoformat()
-            else:
-                result[name] = None
-        return result
+        # One query for all facilities that exist in DB; build name -> last_scraped_at
+        facilities = self.session.query(Facility).filter(Facility.name.in_(names)).all()
+        by_name = {f.name: f.last_scraped_at for f in facilities}
+        return {
+            n: (by_name[n].isoformat() if by_name.get(n) and by_name[n] else None)
+            for n in names
+        }
 
     def get_facility_stats(self, facility_name):
         """Get statistics about a facility's scraping."""
