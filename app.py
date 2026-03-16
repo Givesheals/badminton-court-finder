@@ -92,6 +92,20 @@ def _run_scheduled_scrapes_concurrent():
     logger.info("Concurrent scrape run finished.")
 
 
+def _run_single_facility_scrape(facility_name, reset_errors=False):
+    """Background thread: scrape one facility. Uses its own ScraperManager."""
+    sm = ScraperManager()
+    try:
+        if reset_errors:
+            sm.reset_circuit_breaker(facility_name)
+        result = sm.scrape_facility(facility_name)
+        logger.info("Single-facility scrape %s: success=%s", facility_name, result.get("success"))
+    except Exception as e:
+        logger.exception("Single-facility scrape %s failed: %s", facility_name, e)
+    finally:
+        sm.close()
+
+
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
@@ -187,7 +201,8 @@ def trigger_scrape_all():
 
 @app.route('/api/scrape', methods=['POST'])
 def trigger_scrape():
-    """Manually trigger a scrape for a facility. Set reset_errors=true to clear circuit breaker first."""
+    """Manually trigger a scrape for a facility. Runs in background to avoid worker timeout (scrapes can take 6+ min).
+    Set reset_errors=true to clear circuit breaker first. Returns 202 immediately; check /api/facility/<name>/stats for result."""
     data = request.get_json() or {}
     facility_name = data.get('facility') or request.args.get('facility')
     reset_errors = (
@@ -200,20 +215,18 @@ def trigger_scrape():
             'error': 'facility parameter is required'
         }), 400
 
-    try:
-        sm = ScraperManager(engine=db_engine)
-        try:
-            if reset_errors:
-                ok, _ = sm.reset_circuit_breaker(facility_name)
-                if ok:
-                    logger.info("Circuit breaker reset for %s before scrape", facility_name)
-            result = sm.scrape_facility(facility_name)
-            return jsonify(result), 200 if result['success'] else 500
-        finally:
-            sm.close()
-    except Exception as e:
-        logger.exception("Error triggering scrape: %s", e)
-        return jsonify({'error': str(e)}), 500
+    thread = threading.Thread(
+        target=_run_single_facility_scrape,
+        args=(facility_name,),
+        kwargs={'reset_errors': reset_errors},
+        daemon=True,
+    )
+    thread.start()
+    return jsonify({
+        'status': 'accepted',
+        'message': f'Scrape started for {facility_name} in background. Check /api/facility/{facility_name.replace(" ", "%20")}/stats for result.',
+        'facility': facility_name,
+    }), 202
 
 
 @app.route('/api/facility/<path:facility_name>/stats', methods=['GET'])
