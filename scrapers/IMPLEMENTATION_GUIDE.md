@@ -11,7 +11,7 @@ This document summarises what we've learned building facility scrapers—especia
 | **Legend** (Legend Online Services) | Hill Roads, Trumpington Sport (Abbeycroft) | Same UI: login → Drop ins → club → Court bookings → Badminton → timetable. Red X = booked, green arrow / "N Slots" = bookable. |
 | **GladstoneGo** (Gladstone Go) | One Leisure St Ives | SPA: /book, filters (Where / What / date / Starting from), "See available spaces" → timetable. "Book now" = available. |
 | **Better.org** | Cherry Hinton Leisure Centre | No login. Location URL → activity list (e.g. "Badminton 60min") → day tabs → availability at bottom. Cookie consent on first load. |
-| **Anglian Leisure** (gs-signature) | Linton Village College | Strong bot protection (403). Use sparingly; exclude from heavy cron. |
+| **Anglian Leisure** (gs-signature) | Linton Village College | Strong bot protection (403). Use sparingly; exclude from frequent scheduled scrapes. |
 
 When adding a **new** facility, check whether its booking site is one of these (or another known product). If so, clone and adapt the corresponding scraper and doc below rather than starting from scratch.
 

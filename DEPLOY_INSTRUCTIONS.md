@@ -201,7 +201,7 @@ git push origin main
 
 **To avoid slow first loads:**
 - Consider upgrading to Basic plan ($7/month)
-- Or set up a health check ping service (like cron-job.org) to keep it awake
+- Or use an external health-check / uptime service to ping `/health` periodically (the repo's GitHub Actions workflow already wakes Render before each scheduled scrape)
 
 ---
 

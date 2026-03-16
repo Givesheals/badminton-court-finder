@@ -103,7 +103,7 @@ See [README.md](README.md) for `test_api.py` (requires the API to be running).
 
 - **Deploy backend to Render**: [DEPLOYMENT.md](DEPLOYMENT.md) and [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md)
 - **Set up a persistent database (Neon)**: [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md) or [RENDER_POSTGRES_SETUP.md](RENDER_POSTGRES_SETUP.md)
-- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (GitHub Actions); legacy cron-job.org: [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md)
+- **Scheduled scrapes**: [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) (GitHub Actions)
 - **OpenAI key and agent scraping on Render**: [DEPLOYMENT.md](DEPLOYMENT.md) → “Render: setting up scraping”
 
 ## Troubleshooting

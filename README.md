@@ -23,8 +23,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 | [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) | Render + frontend deployment checklist |
 | [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) | Detailed step-by-step deployment walkthrough |
 | [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) | Deploy Streamlit app to Community Cloud |
-| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work; GitHub Actions (recommended) vs cron-job.org |
-| [CRONJOB_ORG_SETUP.md](CRONJOB_ORG_SETUP.md) | Legacy: step-by-step cron-job.org (scrape-all + keep-awake) |
+| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work (GitHub Actions) |
 
 ## Features
 
@@ -116,7 +115,7 @@ Body: {"facility": "Hill Roads Sport and Tennis Centre"}
 ```
 POST /api/scrape-all
 ```
-Starts background scrapes for all facilities except those in `EXCLUDE_SCRAPE_FACILITIES`. Returns 202 Accepted. Used by cron every 6 hours.
+Starts background scrapes for all facilities except those in `EXCLUDE_SCRAPE_FACILITIES`. Returns 202 Accepted. Triggered every 6 hours by the GitHub Actions scheduled workflow.
 
 ### Facility stats
 ```
@@ -222,7 +221,6 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step (Render + GitHub Pages)
 ├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
 ├── SCHEDULED_SCRAPES.md    # Every-6h scrapes: overview and options
-├── CRONJOB_ORG_SETUP.md    # Legacy: cron-job.org setup (step-by-step)
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
 └── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
 ```
@@ -232,4 +230,4 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 1. Create a new scraper in `scrapers/` (e.g. follow `hill_roads.py` or `one_leisure_st_ives.py`).
 2. Register it in `scraper_manager.py` in the `scrapers` dict.
 3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `streamlit_app.py` and in `index.html`.
-4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no cron changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).
+4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no scheduler changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).
