@@ -34,6 +34,3 @@ test-results/
 # Debug files
 debug_*.png
 debug_*.html
-
-# But allow our frontend
-!index.html

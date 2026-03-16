@@ -1,6 +1,6 @@
 # Step-by-Step Deployment Instructions
 
-**Local setup first:** If you haven’t run the app locally yet, follow [GETTING_STARTED.md](GETTING_STARTED.md) (clone, `.env`, `pip install -r requirements-backend.txt`, run API and Streamlit). This document covers **deploying the backend to Render**, **Streamlit frontend (primary)** via [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md), and **GitHub Pages (static fallback)**.
+**Local setup first:** If you haven’t run the app locally yet, follow [GETTING_STARTED.md](GETTING_STARTED.md) (clone, `.env`, `pip install -r requirements-backend.txt`, run API and Streamlit). This document covers **deploying the backend to Render** and **Streamlit frontend** via [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md).
 
 ## Part 1: Deploy Backend API to Render
 
@@ -143,50 +143,7 @@ You should see: `{"facilities":["Linton Village College"]}`
 
 ## Part 3: Deploy Frontend
 
-**Primary (Streamlit):** The app is live at [https://court-finder.streamlit.app](https://court-finder.streamlit.app). To deploy or redeploy, follow [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) (Streamlit Community Cloud, set `API_BASE_URL` to your Render URL).
-
-**Fallback (GitHub Pages):** Steps below.
-
-### Step 1: Update static frontend (index.html) with your API URL
-
-**If you use the static frontend (index.html):**
-1. Open `index.html` in your code editor
-2. Find line ~316 that says:
-   ```javascript
-   const API_URL = window.location.hostname === 'localhost' 
-       ? 'http://localhost:5000' 
-       : 'https://your-app-name.onrender.com';
-   ```
-3. Replace `https://your-app-name.onrender.com` with your actual Render URL
-4. Save the file
-
-### Step 2: Commit and Push Changes
-In terminal:
-
-```bash
-git add index.html
-git commit -m "Update API URL for production"
-git push origin main
-```
-
-### Step 3: Enable GitHub Pages
-1. Go to your repository on GitHub: https://github.com/Givesheals/badminton-court-finder
-2. Click **"Settings"** tab
-3. In the left sidebar, click **"Pages"**
-4. Under "Source", select:
-   - Branch: **main**
-   - Folder: **/ (root)**
-5. Click **"Save"**
-
-### Step 4: Wait for Deployment
-1. GitHub will show "Your site is ready to be published at..."
-2. Wait 1-2 minutes
-3. Your site will be live at: `https://givesheals.github.io/badminton-court-finder/`
-
-### Step 5: Test Your Frontend
-1. Open your browser
-2. Go to: `https://givesheals.github.io/badminton-court-finder/`
-3. Try selecting some days and searching for courts
+The app is live at [https://court-finder.streamlit.app](https://court-finder.streamlit.app). To deploy or redeploy, follow [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) (Streamlit Community Cloud, set `API_BASE_URL` to your Render URL).
 
 ---
 
@@ -230,15 +187,9 @@ git push origin main
 
 ### If Frontend Can't Connect to API:
 1. Check browser console for errors (F12 → Console)
-2. Verify API URL in index.html is correct
+2. In Streamlit, open Settings and verify Backend API URL points to your Render URL
 3. Make sure CORS is enabled (already in app.py)
 4. Check API is running: visit health endpoint in browser
-
-### If GitHub Pages Shows 404:
-1. Wait 2-3 minutes (can take time to deploy)
-2. Check Settings → Pages shows "Your site is published"
-3. Make sure index.html is in root of repo
-4. Try accessing with trailing slash: `https://givesheals.github.io/badminton-court-finder/`
 
 ---
 
@@ -257,8 +208,7 @@ I'll help you fix it!
 
 After successful deployment:
 
-- **Frontend (primary – Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
-- **Frontend (fallback – GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
+- **Frontend (Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
 - **Backend API (Render)**: `https://YOUR-APP-NAME.onrender.com`
 
 Save these somewhere safe!

@@ -2,10 +2,7 @@
 
 This project uses a split deployment architecture:
 - **Backend API**: Hosted on Render
-- **Frontend (primary)**: Streamlit app on [Streamlit Community Cloud](https://share.streamlit.io), live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. See **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** to deploy or redeploy.
-- **Frontend (fallback)**: Static `index.html` on GitHub Pages: `https://givesheals.github.io/badminton-court-finder/`
-
-The Streamlit app is the intended main UI; the static site was deployed first and remains the fallback until Streamlit is deployed.
+- **Frontend**: Streamlit app on [Streamlit Community Cloud](https://share.streamlit.io), live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. See **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** to deploy or redeploy.
 
 ## Quick Start
 
@@ -32,30 +29,9 @@ The Streamlit app is the intended main UI; the static site was deployed first an
 
 5. **Get URL**: Save your Render URL (e.g., `https://badminton-court-finder.onrender.com`)
 
-### Frontend – Option A: Streamlit (primary UI)
+### Frontend (Streamlit)
 
 Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** for full steps. In short: use [Streamlit Community Cloud](https://share.streamlit.io), connect the repo, set `API_BASE_URL` to your Render URL. Users then use the `*.streamlit.app` URL.
-
-### Frontend – Option B: GitHub Pages (static fallback)
-
-1. **Update API URL** in `index.html`:
-   ```javascript
-   const API_URL = 'https://your-app-name.onrender.com';
-   ```
-
-2. **Push to GitHub**:
-   ```bash
-   git add index.html
-   git commit -m "Update API URL"
-   git push origin main
-   ```
-
-3. **Enable GitHub Pages**:
-   - Go to Settings → Pages
-   - Source: main branch, / (root)
-   - Save
-
-4. **Access**: Your site will be at `https://[username].github.io/badminton-court-finder/`
 
 ## Architecture
 
@@ -63,8 +39,6 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 ┌─────────────────────────────────────────────┐
 │  User's Browser                             │
 │  Streamlit: court-finder.streamlit.app     │
-│  Fallback: givesheals.github.io/...        │
-│  (Static HTML from GitHub Pages)            │
 └────────────┬────────────────────────────────┘
              │ HTTPS API Calls
              ▼
@@ -97,8 +71,7 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 
 | Service | Tier | Cost | Notes |
 |---------|------|------|-------|
-| Streamlit Community Cloud | Free | $0 | Primary frontend (court-finder.streamlit.app) |
-| GitHub Pages | Free | $0 | Static fallback |
+| Streamlit Community Cloud | Free | $0 | Frontend (court-finder.streamlit.app) |
 | Render Free | Free | $0 | Sleeps after 15min inactivity |
 | Render Basic | Paid | $7/mo | Always-on, faster |
 
@@ -142,7 +115,7 @@ python app.py
 curl http://localhost:5000/health
 curl http://localhost:5000/api/facilities
 
-# Open index.html in browser (set API_URL to localhost)
+# Run Streamlit: streamlit run streamlit_app.py (set API URL in Settings if needed)
 ```
 
 ## Render: setting up scraping
@@ -188,8 +161,6 @@ curl https://your-app-name.onrender.com/health
 
 ### Check Logs
 - Render: Dashboard → Your Service → Logs tab
-- GitHub Pages: Usually just works, check browser console for errors
-
 ### Check Facility Stats
 ```bash
 curl https://your-app-name.onrender.com/api/facility/Linton%20Village%20College/stats
@@ -212,7 +183,7 @@ curl https://your-app-name.onrender.com/api/facility/Linton%20Village%20College/
 
 ### Frontend Can't Connect to Backend
 1. Check CORS is enabled (already in app.py)
-2. Verify API_URL in index.html is correct
+2. In Streamlit, open Settings and verify Backend API URL points to your Render URL
 3. Check Render app is running (not sleeping)
 4. Check browser console for errors
 
@@ -247,26 +218,21 @@ git push origin main
 Render auto-deploys on push.
 
 ### Update Frontend
-```bash
-git add index.html
-git commit -m "Update frontend"
-git push origin main
-```
-GitHub Pages auto-deploys in 1-2 minutes.
+Redeploy via Streamlit Community Cloud (see [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)); it rebuilds from your repo on push.
 
 ## Adding New Facilities
 
 1. Create scraper in `scrapers/` directory
 2. Add to `scraper_manager.py`
-3. Update `FACILITY_BOOKING_URLS` in `streamlit_app.py` and `index.html`
+3. Update `FACILITY_BOOKING_URLS` in `streamlit_app.py`
 4. Push to GitHub
-5. Both backend and frontend will auto-deploy
+5. Backend and Streamlit will auto-deploy
 
 ## Security Notes
 
 - Never commit credentials to Git
 - Use environment variables in Render
-- HTTPS everywhere (GitHub Pages and Render both use HTTPS)
+- HTTPS everywhere (Streamlit and Render both use HTTPS)
 - Credentials stored as encrypted env vars in Render
 
 ## Next Steps

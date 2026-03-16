@@ -27,7 +27,7 @@ except Exception:
     _from_secrets = None
 API_BASE = (_from_secrets or os.getenv("API_BASE_URL") or _DEFAULT_API_BASE).strip() or _DEFAULT_API_BASE
 
-# Booking URLs per facility (match index.html; add new facilities here)
+# Booking URLs per facility (add new facilities here)
 FACILITY_BOOKING_URLS = {
     "Linton Village College": "https://clubspark.lta.org.uk/LintonVillageCampus/Booking/BookByDate",
     "One Leisure St Ives": "https://oneleisure.gladstonego.cloud/book",

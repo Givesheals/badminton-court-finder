@@ -2,7 +2,7 @@
 
 This guide gets you from zero to running the Badminton Court Finder locally. Use it with Cursor or any editor.
 
-**Live app:** The Streamlit UI is at [https://court-finder.streamlit.app](https://court-finder.streamlit.app); the static fallback is on [GitHub Pages](https://givesheals.github.io/badminton-court-finder/).
+**Live app:** The Streamlit UI is at [https://court-finder.streamlit.app](https://court-finder.streamlit.app).
 
 ## What you need
 

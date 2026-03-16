@@ -38,10 +38,9 @@ Deploy. The first run may take a few minutes.
 
 After deployment you’ll get a URL like `https://[your-app-name].streamlit.app`. The current app is **https://court-finder.streamlit.app**. Share this with testers; they get the full UI (day picker, time range, “Find Available Courts”, “Scrape all facilities”, Settings).
 
-### Step 7: (Optional) Set as primary in docs
+### Step 7: (Optional) Update docs
 
-- In **README.md** and **DEPLOYMENT.md**, list the Streamlit URL as the **main** frontend.
-- Keep **https://givesheals.github.io/badminton-court-finder/** as the **static fallback** (no Streamlit dependency; works when Streamlit Cloud is down).
+- In **README.md** and **DEPLOYMENT.md**, list the Streamlit URL as the frontend.
 
 ---
 
@@ -56,10 +55,5 @@ After deployment you’ll get a URL like `https://[your-app-name].streamlit.app`
 
 ## Summary
 
-| Before | After (migration complete) |
-|--------|-----------------------------|
-| Only static `index.html` on GitHub Pages was live | Streamlit app is live at `*.streamlit.app` |
-| “Main UI” was only runnable locally | Main UI is public; share one link with users |
-| GitHub Pages = only option for testers | Give testers the Streamlit URL (or keep both and document which is primary) |
 
-Once deployed, your **intended** setup is in place: Streamlit as the primary frontend, static HTML as fallback.
+Once deployed, Streamlit is the frontend; share the `*.streamlit.app` URL with users.

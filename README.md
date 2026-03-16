@@ -2,14 +2,13 @@
 
 A web app to find available badminton courts in Cambridge by aggregating availability from multiple sports facilities.
 
-**Live app (primary)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app) — Streamlit UI. **Fallback**: [GitHub Pages](https://givesheals.github.io/badminton-court-finder/) — static HTML.
+**Live app**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app) — Streamlit UI.
 
 **New to the repo?** Follow **[GETTING_STARTED.md](GETTING_STARTED.md)** for full setup (clone, `.env`, run API and Streamlit).
 
 ## Current setup
 
-- **Frontend (primary)**: Streamlit on [Streamlit Community Cloud](https://share.streamlit.io) at [court-finder.streamlit.app](https://court-finder.streamlit.app). Root `requirements.txt` is minimal (streamlit + requests) for Cloud; backend/local use `requirements-backend.txt`.
-- **Frontend (fallback)**: Static `index.html` on GitHub Pages; both call the same Flask API.
+- **Frontend**: Streamlit on [Streamlit Community Cloud](https://share.streamlit.io) at [court-finder.streamlit.app](https://court-finder.streamlit.app). Root `requirements.txt` is minimal (streamlit + requests) for Cloud; backend/local use `requirements-backend.txt`.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
 - **Scheduled scrapes**: GitHub Actions triggers `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) after waking Render. Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
@@ -165,15 +164,6 @@ Use the GitHub Actions workflow (see [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md
 
 Live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. To deploy or redeploy: see **[STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md)** (Streamlit Community Cloud, set `API_BASE_URL` to your Render URL). Root `requirements.txt` is minimal so Cloud installs without backend deps.
 
-### Frontend (GitHub Pages – fallback)
-
-1. Update API URL in `index.html` with your Render URL
-2. Push to GitHub
-3. Enable GitHub Pages in repository Settings → Pages
-4. Select main branch, root folder
-
-Your site will be at: `https://[username].github.io/badminton-court-finder/`
-
 ### Docker (Local Testing)
 
 ```bash
@@ -194,8 +184,7 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ```
 .
 ├── GETTING_STARTED.md      # Start here – setup guide for new developers
-├── index.html              # Static frontend (GitHub Pages fallback)
-├── streamlit_app.py        # Streamlit frontend (main UI; calls Flask API)
+├── streamlit_app.py        # Streamlit frontend (calls Flask API)
 ├── app.py                  # Flask API (Render); /api/scrape-all for scheduled runs
 ├── scraper_manager.py      # Scraper orchestration, rate limiting, circuit breaker
 ├── database.py             # SQLAlchemy models; Postgres (DATABASE_URL) or SQLite
@@ -218,7 +207,7 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── requirements-backend.txt   # Full deps for API + local dev (Render, playwright, etc.)
 ├── DEPLOYMENT.md           # Deployment overview, env vars, troubleshooting
 ├── DEPLOY_CHECKLIST.md     # Render + frontend deployment checklist
-├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step (Render + GitHub Pages)
+├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step deployment walkthrough
 ├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
 ├── SCHEDULED_SCRAPES.md    # Every-6h scrapes: overview and options
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
@@ -229,5 +218,5 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 
 1. Create a new scraper in `scrapers/` (e.g. follow `hill_roads.py` or `one_leisure_st_ives.py`).
 2. Register it in `scraper_manager.py` in the `scrapers` dict.
-3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `streamlit_app.py` and in `index.html`.
+3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `streamlit_app.py`.
 4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no scheduler changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).

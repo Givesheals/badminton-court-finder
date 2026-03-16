@@ -5,7 +5,7 @@
 - [x] All files staged and pushed
 - [x] Dockerfile created
 - [x] Environment variables documented
-- [x] Frontend: Streamlit on Community Cloud ([court-finder.streamlit.app](https://court-finder.streamlit.app)) + static fallback (index.html on GitHub Pages)
+- [x] Frontend: Streamlit on Community Cloud ([court-finder.streamlit.app](https://court-finder.streamlit.app))
 
 ## Backend Deployment (Render)
 
@@ -57,35 +57,16 @@ curl https://your-app-name.onrender.com/api/facilities
 
 ## Frontend Deployment
 
-### Option A: Streamlit (primary)
+### Frontend (Streamlit)
 Live at **[https://court-finder.streamlit.app](https://court-finder.streamlit.app)**. Deploy or redeploy via [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md): connect repo to Streamlit Community Cloud, main file `streamlit_app.py`, set `API_BASE_URL` to your Render URL. Root `requirements.txt` is minimal (streamlit + requests) so no config needed.
 
-### Option B: GitHub Pages (static fallback)
-
-### Step 1: Point frontend at API
-- **Static (index.html):** Edit the `API_URL` constant (~line 316) to your Render URL.
-
-### Step 2: Commit Changes
-```bash
-git add index.html
-git commit -m "Update API URL for production"
-git push origin main
-```
-
-### Step 3: Enable GitHub Pages
-1. Go to GitHub repo → **Settings** → **Pages**
-2. Source: **main** branch, **/ (root)** folder
-3. Click **Save**
-4. Wait 1-2 minutes for deployment
-
-### Step 4: Test Frontend
-- **Streamlit (primary):** [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
-- **GitHub Pages (fallback):** `https://givesheals.github.io/badminton-court-finder/`
+### Test Frontend
+- [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
 
 ## After adding a new scraper (e.g. One Leisure St Ives)
 
 1. Add the scraper module under `scrapers/` and register it in `scraper_manager.py` (`self.scrapers`).
-2. Add the facility’s booking URL in `streamlit_app.py` and `index.html` (`FACILITY_BOOKING_URLS`).
+2. Add the facility’s booking URL in `streamlit_app.py` (`FACILITY_BOOKING_URLS`).
 3. **Redeploy on Render** so `/api/facilities` includes the new facility:
    - Push to `main` (if auto-deploy is on), or
    - Render Dashboard → your service → **Manual Deploy** → **Deploy latest commit**.
@@ -112,13 +93,11 @@ git push origin main
 
 ### Check Logs
 - Render: Dashboard → Your Service → Logs
-- GitHub Pages: Usually just works, check browser console if issues
 
 ### Cost Monitoring
 - Streamlit Community Cloud: FREE
 - Render Free Tier: $0/month (with sleep)
 - Render Basic: $7/month (always-on)
-- GitHub Pages: FREE forever
 
 ## Troubleshooting
 
@@ -131,7 +110,7 @@ git push origin main
 ### Frontend Issues
 1. Open browser console (F12)
 2. Check for CORS errors
-3. Verify API URL is correct in index.html
+3. In Streamlit Settings, verify Backend API URL points to your Render URL
 4. Test API directly with curl
 
 ### Connection Issues
@@ -143,13 +122,11 @@ git push origin main
 
 After deployment, save these:
 
-- **Frontend (primary – Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
-- **Frontend (fallback – GitHub Pages)**: `https://givesheals.github.io/badminton-court-finder/`
+- **Frontend (Streamlit)**: [https://court-finder.streamlit.app](https://court-finder.streamlit.app)
 - **Backend (Render)**: `https://[your-app-name].onrender.com`
 
 ## Budget Safety
 
-- GitHub Pages: Always free
 - Render Free Tier: Free (with cold starts)
 - Render Basic: $7/month fixed
 - Total recommended cost: $0-7/month
