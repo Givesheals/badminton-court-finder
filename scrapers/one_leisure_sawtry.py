@@ -1,9 +1,5 @@
-"""Scraper for One Leisure St Ives badminton court availability.
+"""Scraper for One Leisure Sawtry badminton court availability."""
 
-Flow: land on /book → set Where/What/date/Starting from → Search → See available spaces
-→ timetable page. We only scrape the 14-day booking window (today through today+13).
-Slot states: "Book now" = available; "This slot is unavailable" or "available to be booked on" = not available.
-"""
 import re
 import time
 from datetime import datetime, timedelta
@@ -14,7 +10,6 @@ from scrapers.one_leisure_base import (
     BOOKING_WINDOW_DAYS,
 )
 
-# Month name to number for parsing "Thu 5th Feb"
 MONTH_NAMES = {
     "jan": 1,
     "feb": 2,
@@ -31,13 +26,13 @@ MONTH_NAMES = {
 }
 
 
-class OneLeisureStIvesScraper(OneLeisureBaseScraper):
-    """St Ives-specific GladstoneGo scraper using the shared OneLeisureBaseScraper."""
+class OneLeisureSawtryScraper(OneLeisureBaseScraper):
+    """Sawtry-specific GladstoneGo scraper using the shared OneLeisureBaseScraper."""
 
     CONFIG = OneLeisureConfig(
-        facility_name="One Leisure St Ives",
-        where_value="One Leisure St Ives Indoo",
-        where_fallbacks=["One Leisure St Ives", "St Ives Indoo", "St Ives"],
+        facility_name="One Leisure Sawtry",
+        where_value="One Leisure Sawtry",
+        where_fallbacks=["Sawtry"],
     )
 
     def _extract_availability_from_timetable(self, page):
@@ -73,15 +68,15 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
         return all_slots
 
     def _select_timetable_date(self, page, target_date, day_num, month_abbr):
-        """Click the calendar day cell for the given date (e.g. THU 5 in February)."""
+        """Click the calendar day cell for the given date."""
         day_pattern = re.compile(rf"(?:MON|TUE|WED|THU|FRI|SAT|SUN)\s+{day_num}\b", re.I)
         try:
-            day_cell = page.locator("[class*='calendar'], [class*='date'], [class*='day'], button, a").filter(
-                has_text=day_pattern
-            ).first
+            day_cell = page.locator(
+                "[class*='calendar'], [class*='date'], [class*='day'], button, a"
+            ).filter(has_text=day_pattern).first
             if day_cell.is_visible(timeout=3000):
                 day_cell.click()
-                time.sleep(1.5)  # Let grid update before parsing
+                time.sleep(1.5)
                 return True
         except Exception:
             pass
@@ -96,17 +91,14 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
         return False
 
     def _scroll_timetable_grid(self, page):
-        """Scroll down to load all time slots and right to load Court 6."""
+        """Scroll down to load all time slots and right to load all courts."""
         try:
-            # Scroll main content down (multiple steps to load all hours)
             for _ in range(4):
                 page.mouse.wheel(0, 400)
                 time.sleep(0.2)
-            # Scroll back up so we can parse from top
             for _ in range(4):
                 page.mouse.wheel(0, -400)
                 time.sleep(0.2)
-            # Scroll right to reveal Court 6
             page.mouse.wheel(300, 0)
             time.sleep(0.3)
             page.mouse.wheel(-300, 0)
@@ -118,17 +110,23 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
         """Parse 'Thu 5th Feb' or '5th Feb' from card text; return (date_str, day_name) or (None, None)."""
         year = target_date.year if target_date else datetime.now().year
         m = re.search(
-            r"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d+)(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b",
-            text, re.I
+            r"(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+(\d+)(?:st|nd|rd|th)?\s+"
+            r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b",
+            text,
+            re.I,
         )
         if not m:
-            m = re.search(r"\b(\d+)(?:st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b", text, re.I)
+            m = re.search(
+                r"\b(\d+)(?:st|nd|rd|th)?\s+"
+                r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\b",
+                text,
+                re.I,
+            )
         if m:
             day_num = int(m.group(1))
             month_abbr = m.group(2).lower()[:3]
             month = MONTH_NAMES.get(month_abbr)
             if month:
-                # Year rollover: if card says Jan and we're scraping in Dec, use next year
                 if month == 1 and target_date and target_date.month == 12:
                     year = target_date.year + 1
                 try:
@@ -139,10 +137,9 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
         return None, None
 
     def _parse_timetable_cards_for_date(self, page, date_str, day_name, target_date=None):
-        """Find all slot cards in the grid and parse court, time, availability. Use date from card text when present."""
+        """Find all slot cards in the grid and parse court, time, availability."""
         slots = []
-        year = target_date.year if target_date else datetime.now().year
-        # Cards contain: "Court N", "HH:MM - HH:MM", "Thu 5th Feb", and either "Book now" or "unavailable" or "available to be booked"
+
         card_selectors = [
             page.locator("[class*='card'], [class*='slot'], [class*='cell']").filter(
                 has_text=re.compile(r"Court\s+\d+", re.I)
@@ -160,17 +157,20 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
             except Exception:
                 continue
         if not cards:
-            # Fallback: any element that has Court + time range + one of the status phrases
             try:
                 candidates = page.locator("div, article, section").filter(
-                    has_text=re.compile(r"Court\s+\d+.*\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", re.S)
+                    has_text=re.compile(
+                        r"Court\s+\d+.*\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", re.S
+                    )
                 ).all()
                 for el in candidates:
                     try:
                         t = el.inner_text()
                         if len(t) > 500:
                             continue
-                        if re.search(r"Court\s+\d+", t, re.I) and re.search(r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", t):
+                        if re.search(r"Court\s+\d+", t, re.I) and re.search(
+                            r"\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}", t
+                        ):
                             cards.append(el)
                     except Exception:
                         continue
@@ -181,27 +181,29 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
         for card in cards:
             try:
                 text = card.inner_text()
-                # Use date from card text ("Thu 5th Feb") when present so we're correct even if calendar didn't change
-                slot_date_str, slot_day_name = self._parse_date_from_card_text(text, target_date=target_date)
+                slot_date_str, slot_day_name = self._parse_date_from_card_text(
+                    text, target_date=target_date
+                )
                 if slot_date_str is None:
                     slot_date_str, slot_day_name = date_str, day_name
-                # Court: "Court 1" .. "Court 6"
+
                 court_m = re.search(r"Court\s+(\d+)", text, re.I)
                 if not court_m:
                     continue
                 court_num = court_m.group(1)
                 court_label = f"Court {court_num}"
-                # Time: "15:00 - 16:00"
+
                 time_m = re.search(r"(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})", text)
                 if not time_m:
                     continue
                 start_time = f"{int(time_m.group(1)):02d}:{time_m.group(2)}"
                 end_time = f"{int(time_m.group(3)):02d}:{time_m.group(4)}"
+
                 key = (slot_date_str, court_label, start_time)
                 if key in seen:
                     continue
                 seen.add(key)
-                # Availability: bookable if we see Book now/Book/Available (GladstoneGo varies); not if explicitly unavailable
+
                 has_bookable = bool(
                     re.search(r"Book\s+now|Book\b|Available", text, re.I)
                     and not re.search(r"available to be booked on", text, re.I)
@@ -210,43 +212,17 @@ class OneLeisureStIvesScraper(OneLeisureBaseScraper):
                     re.search(r"unavailable|available to be booked on|This slot is", text, re.I)
                 )
                 is_available = has_bookable or (not has_unavailable)
-                slots.append({
-                    "date": slot_date_str,
-                    "day_name": slot_day_name,
-                    "start_time": start_time,
-                    "end_time": end_time,
-                    "court_number": court_label,
-                    "is_available": is_available,
-                })
+                slots.append(
+                    {
+                        "date": slot_date_str,
+                        "day_name": slot_day_name,
+                        "start_time": start_time,
+                        "end_time": end_time,
+                        "court_number": court_label,
+                        "is_available": is_available,
+                    }
+                )
             except Exception:
                 continue
         return slots
 
-    def _store_availability(self, availability):
-        """Store availability in DB (same shape as other scrapers)."""
-        self.session.query(CourtAvailability).filter_by(facility_id=self.facility.id).delete()
-        for slot in availability:
-            record = CourtAvailability(
-                facility_id=self.facility.id,
-                date=slot["date"],
-                day_name=slot.get("day_name"),
-                start_time=slot["start_time"],
-                end_time=slot["end_time"],
-                court_number=slot.get("court_number", "Court 1"),
-                is_available=slot["is_available"],
-                scraped_at=datetime.utcnow(),
-            )
-            self.session.add(record)
-        self.session.commit()
-        print(f"Stored {len(availability)} availability records.")
-
-
-if __name__ == "__main__":
-    scraper = OneLeisureStIvesScraper(headless=False)
-    try:
-        scraper.scrape()
-        print("Done.")
-    except Exception as e:
-        print(f"Error: {e}")
-        import traceback
-        traceback.print_exc()

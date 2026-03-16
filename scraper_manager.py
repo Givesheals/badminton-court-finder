@@ -9,7 +9,13 @@ from database import init_db, get_session, Facility, CourtAvailability
 from scrapers.cherry_hinton_agent_scraper import CherryHintonAgentScraper
 from scrapers.linton_agent_scraper import LintonAgentScraper
 from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
-from scrapers.one_leisure_agent_scraper import OneLeisureAgentScraper
+from scrapers.one_leisure_agent_scraper import (
+    OneLeisureStIvesAgentScraper,
+    OneLeisureStNeotsAgentScraper,
+    OneLeisureHuntingdonAgentScraper,
+    OneLeisureRamseyAgentScraper,
+    OneLeisureSawtryAgentScraper,
+)
 from scrapers.trumpington_agent_scraper import TrumpingtonAgentScraper
 import logging
 
@@ -38,7 +44,11 @@ class ScraperManager:
             'Cherry Hinton Leisure Centre': CherryHintonAgentScraper,
             'Linton Village College': LintonAgentScraper,
             'Hill Roads Sport and Tennis Centre': HillRoadsAgentScraper,
-            'One Leisure St Ives': OneLeisureAgentScraper,
+            'One Leisure St Ives': OneLeisureStIvesAgentScraper,
+            'One Leisure St Neots': OneLeisureStNeotsAgentScraper,
+            'One Leisure Huntingdon': OneLeisureHuntingdonAgentScraper,
+            'One Leisure Ramsey': OneLeisureRamseyAgentScraper,
+            'One Leisure Sawtry': OneLeisureSawtryAgentScraper,
             'Trumpington Sport': TrumpingtonAgentScraper,
         }
     
@@ -225,6 +235,24 @@ class ScraperManager:
         from_scrapers = set(self.scrapers.keys())
         from_db = {f.name for f in self.session.query(Facility).all()}
         return sorted(from_scrapers | from_db)
+
+    def scrape_one_leisure_sequence(self):
+        """Helper to scrape all One Leisure facilities sequentially.
+
+        Respects per-facility rate limits and returns a mapping of facility name
+        to the scrape result dictionary.
+        """
+        one_leisure_names = [
+            "One Leisure St Ives",
+            "One Leisure St Neots",
+            "One Leisure Huntingdon",
+            "One Leisure Ramsey",
+            "One Leisure Sawtry",
+        ]
+        results = {}
+        for name in one_leisure_names:
+            results[name] = self.scrape_facility(name)
+        return results
 
     def get_facilities_last_updated(self):
         """Get last_scraped_at for all known facilities (for display). Single query instead of N+1."""

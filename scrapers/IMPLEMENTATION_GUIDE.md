@@ -9,7 +9,7 @@ This document summarises what we've learned building facility scrapers—especia
 | Platform / product | Venues in this project | Notes |
 |--------------------|------------------------|--------|
 | **Legend** (Legend Online Services) | Hill Roads, Trumpington Sport (Abbeycroft) | Same UI: login → Drop ins → club → Court bookings → Badminton → timetable. Red X = booked, green arrow / "N Slots" = bookable. |
-| **GladstoneGo** (Gladstone Go) | One Leisure St Ives | SPA: /book, filters (Where / What / date / Starting from), "See available spaces" → timetable. "Book now" = available. |
+| **GladstoneGo** (Gladstone Go) | One Leisure St Ives, One Leisure St Neots, One Leisure Huntingdon, One Leisure Ramsey, One Leisure Sawtry | SPA: /book, filters (Where / What / date / Starting from), "See available spaces" → timetable. "Book now" = available. All One Leisure venues share this platform and use a shared base scraper. |
 | **Better.org** | Cherry Hinton Leisure Centre | No login. Location URL → activity list (e.g. "Badminton 60min") → day tabs → availability at bottom. Cookie consent on first load. |
 | **Anglian Leisure** (gs-signature) | Linton Village College | Strong bot protection (403). Use sparingly; exclude from frequent scheduled scrapes. |
 
@@ -19,8 +19,8 @@ When adding a **new** facility, check whether its booking site is one of these (
 
 ## Architecture every scraper follows
 
-1. **Base scraper** (`scrapers/<name>.py`): Playwright navigation only—goto URL, login if needed, open the right activity and date range, call `_extract_availability(page, expected_date=...)` per day, then `_store_availability(all_slots)` once.
-2. **Agent scraper** (`scrapers/<name>_agent_scraper.py`): Subclasses the base and overrides `_extract_availability` to use `extract_availability_from_page(..., expected_date=expected_date)` from `llm_extract.py` (OpenAI). The app always uses the agent scraper.
+1. **Base scraper** (`scrapers/<name>.py`): Playwright navigation only—goto URL, login if needed, open the right activity and date range, call `_extract_availability(page, expected_date=...)` per day, then `_store_availability(all_slots)` once. For GladstoneGo / One Leisure facilities, use `OneLeisureBaseScraper` in `scrapers/one_leisure_base.py` and provide a small `OneLeisureConfig` instead of duplicating navigation logic.
+2. **Agent scraper** (`scrapers/<name>_agent_scraper.py`): Subclasses the base and overrides `_extract_availability` (or mixes in `OneLeisureAgentMixin` for GladstoneGo) to use `extract_availability_from_page(..., expected_date=expected_date)` from `llm_extract.py` (OpenAI). The app always uses the agent scraper.
 3. **Registration**: Add the agent class to `scraper_manager.py` in `self.scrapers` with the exact facility name string (used by API and DB).
 4. **Database**: No schema change. `_get_or_create_facility()` and `_store_availability()` (delete existing rows for that facility, then insert) are the same for all.
 
@@ -110,7 +110,12 @@ When something fails (e.g. “no day tab found”), save a screenshot so you can
 | `scrapers/cherry_hinton.py` | Better.org example: cookie dismiss, 60min selectors + JS fallback, day-tab selectors + JS fallback, expected_date loop, debug screenshot. |
 | `scrapers/llm_extract.py` | `extract_availability_from_page(page, facility_name, expected_date)` and `expected_date` handling. |
 | `scrapers/trumpington_sport.py` | Legend (Abbeycroft) example: login, date tabs, `expected_date` per day. |
-| `scrapers/one_leisure_st_ives.py` | GladstoneGo example: filters, timetable date selection, 14-day window. |
+| `scrapers/one_leisure_base.py` | Shared GladstoneGo / One Leisure base scraper with configurable facility metadata. |
+| `scrapers/one_leisure_st_ives.py` | One Leisure St Ives scraper built on `OneLeisureBaseScraper` with timetable date/slot parsing. |
+| `scrapers/one_leisure_st_neots.py` | One Leisure St Neots scraper built on `OneLeisureBaseScraper`. |
+| `scrapers/one_leisure_huntingdon.py` | One Leisure Huntingdon scraper built on `OneLeisureBaseScraper`. |
+| `scrapers/one_leisure_ramsey.py` | One Leisure Ramsey scraper built on `OneLeisureBaseScraper`. |
+| `scrapers/one_leisure_sawtry.py` | One Leisure Sawtry scraper built on `OneLeisureBaseScraper`. |
 | `scraper_manager.py` | Where to register new scrapers and facility names. |
 | `test_cherry_hinton.py` | Example tests: SCRAPE_DAYS range, distinct dates stored, slot structure, integration with _store_availability. |
 

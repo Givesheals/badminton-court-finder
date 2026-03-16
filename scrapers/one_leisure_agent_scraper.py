@@ -1,29 +1,34 @@
 """
-Agent-based scraper for One Leisure St Ives.
-Uses the same Playwright navigation as OneLeisureStIvesScraper but extracts
-availability via LLM (OpenAI) instead of fixed selectors.
+Agent-based scrapers for One Leisure facilities.
+
+These classes reuse the Playwright navigation from the OneLeisure*Scraper
+base classes and override timetable extraction to use the LLM-based
+`extract_availability_from_page` helper.
+
 Requires OPENAI_API_KEY in the environment.
 """
+
 import time
 from datetime import datetime, timedelta
 
-from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper, BOOKING_WINDOW_DAYS
+from scrapers.one_leisure_base import BOOKING_WINDOW_DAYS
+from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
+from scrapers.one_leisure_st_neots import OneLeisureStNeotsScraper
+from scrapers.one_leisure_huntingdon import OneLeisureHuntingdonScraper
+from scrapers.one_leisure_ramsey import OneLeisureRamseyScraper
+from scrapers.one_leisure_sawtry import OneLeisureSawtryScraper
 from scrapers.llm_extract import extract_availability_from_page
 
 
-class OneLeisureAgentScraper(OneLeisureStIvesScraper):
-    """
-    One Leisure St Ives scraper that uses LLM to parse the timetable page.
-    Same navigation as OneLeisureStIvesScraper; only extraction is agentic.
-    Loops over the 14-day booking window (like the base) and aggregates all days.
-    """
+class OneLeisureAgentMixin:
+    """Mixin that implements LLM-based timetable extraction for One Leisure."""
 
     def _extract_availability_from_timetable(self, page):
         """Extract availability using LLM for each day in the 14-day booking window."""
         today = datetime.now().date()
         dates_to_scrape = [today + timedelta(days=i) for i in range(BOOKING_WINDOW_DAYS)]
         all_slots = []
-        facility_name = self.facility.name if self.facility else "One Leisure St Ives"
+        facility_name = getattr(self, "facility", None).name if getattr(self, "facility", None) else "One Leisure"
 
         for target_date in dates_to_scrape:
             date_str = target_date.strftime("%Y-%m-%d")
@@ -45,6 +50,40 @@ class OneLeisureAgentScraper(OneLeisureStIvesScraper):
                 expected_date=target_date,
             )
             all_slots.extend(day_slots)
-            print(f"  {date_str}: {len(day_slots)} slots ({sum(1 for s in day_slots if s.get('is_available'))} available)")
+            print(
+                f"  {date_str}: {len(day_slots)} slots "
+                f"({sum(1 for s in day_slots if s.get('is_available'))} available)"
+            )
 
         return all_slots
+
+
+class OneLeisureStIvesAgentScraper(OneLeisureAgentMixin, OneLeisureStIvesScraper):
+    """Agent-based scraper for One Leisure St Ives."""
+
+    pass
+
+
+class OneLeisureStNeotsAgentScraper(OneLeisureAgentMixin, OneLeisureStNeotsScraper):
+    """Agent-based scraper for One Leisure St Neots."""
+
+    pass
+
+
+class OneLeisureHuntingdonAgentScraper(OneLeisureAgentMixin, OneLeisureHuntingdonScraper):
+    """Agent-based scraper for One Leisure Huntingdon."""
+
+    pass
+
+
+class OneLeisureRamseyAgentScraper(OneLeisureAgentMixin, OneLeisureRamseyScraper):
+    """Agent-based scraper for One Leisure Ramsey."""
+
+    pass
+
+
+class OneLeisureSawtryAgentScraper(OneLeisureAgentMixin, OneLeisureSawtryScraper):
+    """Agent-based scraper for One Leisure Sawtry."""
+
+    pass
+

@@ -18,6 +18,10 @@ EXPECTED_FACILITIES = {
     "Linton Village College",
     "Hill Roads Sport and Tennis Centre",
     "One Leisure St Ives",
+    "One Leisure St Neots",
+    "One Leisure Huntingdon",
+    "One Leisure Ramsey",
+    "One Leisure Sawtry",
     "Trumpington Sport",
     "Cherry Hinton Leisure Centre",
 }
@@ -29,7 +33,13 @@ def test_a_all_scrapers_are_agent_classes():
     from scrapers.cherry_hinton_agent_scraper import CherryHintonAgentScraper
     from scrapers.hill_roads_agent_scraper import HillRoadsAgentScraper
     from scrapers.linton_agent_scraper import LintonAgentScraper
-    from scrapers.one_leisure_agent_scraper import OneLeisureAgentScraper
+    from scrapers.one_leisure_agent_scraper import (
+        OneLeisureStIvesAgentScraper,
+        OneLeisureStNeotsAgentScraper,
+        OneLeisureHuntingdonAgentScraper,
+        OneLeisureRamseyAgentScraper,
+        OneLeisureSawtryAgentScraper,
+    )
     from scrapers.trumpington_agent_scraper import TrumpingtonAgentScraper
 
     sm = ScraperManager()
@@ -37,7 +47,11 @@ def test_a_all_scrapers_are_agent_classes():
         CherryHintonAgentScraper,
         HillRoadsAgentScraper,
         LintonAgentScraper,
-        OneLeisureAgentScraper,
+        OneLeisureStIvesAgentScraper,
+        OneLeisureStNeotsAgentScraper,
+        OneLeisureHuntingdonAgentScraper,
+        OneLeisureRamseyAgentScraper,
+        OneLeisureSawtryAgentScraper,
         TrumpingtonAgentScraper,
     }
     for name, scraper_class in sm.scrapers.items():
@@ -62,7 +76,7 @@ def test_b_linton_excluded_by_default():
 
 
 def test_c_scrape_all_excludes_linton_by_default():
-    """With default config, scrape-all should include 4 facilities (Linton excluded)."""
+    """With default config, scrape-all should include non-Linton facilities (Linton excluded)."""
     from scraper_manager import ScraperManager
 
     saved = os.environ.pop("EXCLUDE_SCRAPE_FACILITIES", None)
@@ -71,9 +85,6 @@ def test_c_scrape_all_excludes_linton_by_default():
         raw = os.getenv("EXCLUDE_SCRAPE_FACILITIES", "Linton Village College")
         excluded = set(name.strip() for name in raw.split(",") if name.strip())
         to_scrape = [f for f in sm.get_facilities_list() if f not in excluded]
-        assert len(to_scrape) == 4, (
-            f"Scrape-all should include 4 facilities (Linton excluded); got {len(to_scrape)}: {to_scrape}."
-        )
         assert "Cherry Hinton Leisure Centre" in to_scrape, (
             "Cherry Hinton Leisure Centre must be in the scrape list when using default exclude."
         )
@@ -87,7 +98,7 @@ def test_c_scrape_all_excludes_linton_by_default():
 
 
 def test_d_api_returns_all_facilities():
-    """GET /api/facilities must return exactly the five expected facilities (front-end data path)."""
+    """GET /api/facilities must return exactly the expected facilities (front-end data path)."""
     from app import app
 
     with app.test_client() as client:
@@ -95,9 +106,6 @@ def test_d_api_returns_all_facilities():
         assert rv.status_code == 200, f"Expected 200, got {rv.status_code}"
         data = rv.get_json()
         facilities = data.get("facilities") or []
-        assert len(facilities) == 5, (
-            f"API should return 5 facilities; got {len(facilities)}: {facilities}."
-        )
         assert set(facilities) == EXPECTED_FACILITIES, (
             f"Facilities should be {EXPECTED_FACILITIES}; got {set(facilities)}."
         )
