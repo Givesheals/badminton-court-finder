@@ -139,7 +139,7 @@ class ScraperManager:
             }
             
         except Exception as e:
-            logger.error(f"Error scraping {facility_name}: {e}")
+            logger.exception("Error scraping %s: %s", facility_name, e)
             # Roll back so the session is usable for the next request (avoids "Can't reconnect until invalid transaction is rolled back")
             try:
                 self.session.rollback()
@@ -255,6 +255,16 @@ class ScraperManager:
             'cached_slots': len(cached_data),
             'circuit_breaker_active': (facility.scrape_errors or 0) >= self.MAX_CONSECUTIVE_ERRORS
         }
+
+    def reset_circuit_breaker(self, facility_name):
+        """Reset scrape_errors for a facility so the next scrape is not blocked by the circuit breaker."""
+        facility = self.session.query(Facility).filter_by(name=facility_name).first()
+        if not facility:
+            return False, "Facility not found"
+        facility.scrape_errors = 0
+        self.session.commit()
+        logger.info("Reset circuit breaker for %s", facility_name)
+        return True, "Circuit breaker reset"
     
     def close(self):
         """Close database session."""

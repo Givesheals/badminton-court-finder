@@ -187,9 +187,13 @@ def trigger_scrape_all():
 
 @app.route('/api/scrape', methods=['POST'])
 def trigger_scrape():
-    """Manually trigger a scrape for a facility."""
+    """Manually trigger a scrape for a facility. Set reset_errors=true to clear circuit breaker first."""
     data = request.get_json() or {}
     facility_name = data.get('facility') or request.args.get('facility')
+    reset_errors = (
+        data.get('reset_errors') is True
+        or request.args.get('reset_errors', '').lower() in ('1', 'true', 'yes')
+    )
 
     if not facility_name:
         return jsonify({
@@ -199,6 +203,10 @@ def trigger_scrape():
     try:
         sm = ScraperManager(engine=db_engine)
         try:
+            if reset_errors:
+                ok, _ = sm.reset_circuit_breaker(facility_name)
+                if ok:
+                    logger.info("Circuit breaker reset for %s before scrape", facility_name)
             result = sm.scrape_facility(facility_name)
             return jsonify(result), 200 if result['success'] else 500
         finally:
@@ -208,7 +216,7 @@ def trigger_scrape():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/facility/<facility_name>/stats', methods=['GET'])
+@app.route('/api/facility/<path:facility_name>/stats', methods=['GET'])
 def get_facility_stats(facility_name):
     """Get scraping statistics for a facility."""
     try:
@@ -222,6 +230,23 @@ def get_facility_stats(facility_name):
             sm.close()
     except Exception as e:
         logger.exception("Error getting facility stats: %s", e)
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/facility/<path:facility_name>/reset-circuit-breaker', methods=['POST'])
+def reset_circuit_breaker(facility_name):
+    """Reset circuit breaker (scrape_errors) for a facility so the next scrape is not blocked."""
+    try:
+        sm = ScraperManager(engine=db_engine)
+        try:
+            ok, message = sm.reset_circuit_breaker(facility_name)
+            if not ok:
+                return jsonify({'error': message}), 404
+            return jsonify({'status': 'ok', 'message': message}), 200
+        finally:
+            sm.close()
+    except Exception as e:
+        logger.exception("Error resetting circuit breaker: %s", e)
         return jsonify({'error': str(e)}), 500
 
 

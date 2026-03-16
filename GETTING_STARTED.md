@@ -93,9 +93,10 @@ From the project root, run (no server needed for these):
 python3 test_find_courts_speed.py
 python3 test_scraper_migration.py
 python3 test_cherry_hinton.py
+python3 test_trumpington.py
 ```
 
-See [README.md](README.md) for `test_api.py` (requires the API to be running).
+`test_trumpington.py` runs unit tests always; the integration test (full scrape) is skipped unless `OPENAI_API_KEY` is set and requires `playwright install chromium` (and Legend login env vars) to pass. See [README.md](README.md) for `test_api.py` (requires the API to be running).
 
 ---
 

@@ -74,6 +74,7 @@ class TrumpingtonSportScraper:
                 print(f"Navigating to {self.LOGIN_URL}...")
                 page.goto(self.LOGIN_URL, wait_until="networkidle", timeout=60000)
                 time.sleep(2)
+                self._dismiss_cookie_consent(page)
 
                 # Step 2: Login
                 print("Logging in...")
@@ -163,6 +164,22 @@ class TrumpingtonSportScraper:
                 browser.close()
                 self.session.close()
 
+    def _dismiss_cookie_consent(self, page):
+        """Dismiss cookie consent if present so it doesn't block navigation or clicks."""
+        try:
+            for label in ["Accept All Cookies", "Reject All", "Accept all", "Reject all"]:
+                btn = page.get_by_role("button", name=label)
+                if btn.count() > 0 and btn.first.is_visible(timeout=2000):
+                    btn.first.click()
+                    time.sleep(1)
+                    return
+            close = page.locator("[aria-label='Close'], .cookie-consent button, [title='Close']").first
+            if close.is_visible(timeout=1000):
+                close.click()
+                time.sleep(0.5)
+        except Exception:
+            pass
+
     def _login(self, page):
         """Handle login (email + password + Login)."""
         page.wait_for_selector(
@@ -236,9 +253,9 @@ class TrumpingtonSportScraper:
 
     def _select_club(self, page):
         """Select club 'Trumpington Sport' in the main content Clubs field (combobox)."""
-        # Open the Clubs combobox in the main "Online Booking" area (placeholder "Please select a clubs")
+        # Open the Clubs combobox in the main "Online Booking" area (placeholder "Please select a club(s)")
         try:
-            clubs_input = page.get_by_placeholder(re.compile(r"Please select a club", re.I)).first
+            clubs_input = page.get_by_placeholder(re.compile(r"Please select a club(s)?", re.I)).first
             if clubs_input.is_visible(timeout=5000):
                 clubs_input.click()
                 time.sleep(1)
