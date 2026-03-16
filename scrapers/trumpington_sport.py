@@ -1,7 +1,7 @@
 """Scraper for Trumpington Sport (Abbeycroft Leisure) badminton court availability.
 
 Flow: Abbeycroft Legend login → Drop ins → Select club "Trumpington Sport" →
-Court bookings → Badminton → View timetable. Scrapes today + 13 days.
+Court bookings → Badminton → View timetable. Scrapes today + 7 days (8 total; site shows 8 days).
 Red X = booked, green arrow / N Slots = bookable (same Legend UI as Hill Roads).
 """
 import os
@@ -17,8 +17,8 @@ from database import init_db, get_session, Facility, CourtAvailability
 
 load_dotenv()
 
-# Number of days to scrape: today + 13 following = 14 days
-SCRAPE_DAYS = 14
+# Number of days to scrape: today + 7 = 8 days (site only shows 8 days of availability)
+SCRAPE_DAYS = 8
 
 
 class TrumpingtonSportScraper:
@@ -802,24 +802,28 @@ class TrumpingtonSportScraper:
         return availability
 
     def _store_availability(self, availability):
-        """Store availability in database (replace existing for this facility)."""
-        self.session.query(CourtAvailability).filter_by(
-            facility_id=self.facility.id
-        ).delete()
-        for slot in availability:
-            record = CourtAvailability(
-                facility_id=self.facility.id,
-                date=slot["date"],
-                day_name=slot.get("day_name"),
-                start_time=slot["start_time"],
-                end_time=slot["end_time"],
-                court_number=slot.get("court_number", "Court 1"),
-                is_available=slot["is_available"],
-                scraped_at=datetime.utcnow(),
-            )
-            self.session.add(record)
-        self.session.commit()
-        print(f"Stored {len(availability)} availability records.")
+        """Store availability in database (replace existing for this facility).
+        Uses a fresh session to avoid 'SSL connection closed' after long scrapes (Neon/Postgres idle timeout)."""
+        facility_id = self.facility.id
+        session = get_session(self.db_engine)
+        try:
+            session.query(CourtAvailability).filter_by(facility_id=facility_id).delete()
+            for slot in availability:
+                record = CourtAvailability(
+                    facility_id=facility_id,
+                    date=slot["date"],
+                    day_name=slot.get("day_name"),
+                    start_time=slot["start_time"],
+                    end_time=slot["end_time"],
+                    court_number=slot.get("court_number", "Court 1"),
+                    is_available=slot["is_available"],
+                    scraped_at=datetime.utcnow(),
+                )
+                session.add(record)
+            session.commit()
+            print(f"Stored {len(availability)} availability records.")
+        finally:
+            session.close()
 
 
 if __name__ == "__main__":
