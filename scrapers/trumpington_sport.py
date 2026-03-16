@@ -232,24 +232,83 @@ class TrumpingtonSportScraper:
         print(f"After login: {page.url}")
 
     def _click_drop_ins(self, page):
-        """Click 'Drop ins' in the Make a booking section."""
-        for selector in [
-            'a:has-text("Drop ins")',
-            'button:has-text("Drop ins")',
-            '[class*="drop"]:has-text("Drop ins")',
-            'text="Drop ins"',
+        """Click 'Drop Ins' in the Make a Booking section (home page: two buttons, Classes and Drop Ins)."""
+        # Wait for post-login home: either URL or the Make a Booking section to be visible
+        try:
+            page.wait_for_url(re.compile(r"/account/home|/enterprise/account/home"), timeout=15000)
+        except Exception:
+            pass
+        try:
+            page.get_by_text("Make a Booking", exact=True).first.wait_for(state="visible", timeout=10000)
+        except Exception:
+            pass
+        time.sleep(1)
+
+        # Some Legend sites show "Make a Booking" link first; click it so the section with "Drop Ins" expands
+        for make_booking in [
+            'a:has-text("Make a Booking")',
+            'a:has-text("make a booking")',
+            'a:has-text("Make a booking")',
         ]:
             try:
-                el = page.locator(selector).first
-                if el.is_visible(timeout=5000):
+                el = page.locator(make_booking).first
+                if el.is_visible(timeout=3000):
                     el.click()
                     time.sleep(3)
                     page.wait_for_load_state("networkidle", timeout=15000)
-                    print("Clicked Drop ins")
-                    return
+                    print("Clicked Make a Booking")
+                    break
             except Exception:
                 continue
-        raise Exception("Could not find 'Drop ins'")
+
+        # Text variants the site might use
+        drop_ins_variants = [
+            "Drop ins",
+            "Drop-ins",
+            "Drop Ins",
+            "Dropins",
+        ]
+        # Selectors: link, button, then any element with matching text
+        for text in drop_ins_variants:
+            for selector in [
+                f'a:has-text("{text}")',
+                f'button:has-text("{text}")',
+                f'[class*="drop"]:has-text("{text}")',
+                f'text="{text}"',
+            ]:
+                try:
+                    el = page.locator(selector).first
+                    if el.is_visible(timeout=5000):
+                        el.click()
+                        time.sleep(3)
+                        page.wait_for_load_state("networkidle", timeout=15000)
+                        print(f"Clicked Drop ins (matched '{text}')")
+                        return
+                except Exception:
+                    continue
+        # Role-based and regex fallback
+        try:
+            link = page.get_by_role("link", name=re.compile(r"drop\s*[- ]?ins", re.I)).first
+            if link.is_visible(timeout=5000):
+                link.click()
+                time.sleep(3)
+                page.wait_for_load_state("networkidle", timeout=15000)
+                print("Clicked Drop ins (role link)")
+                return
+        except Exception:
+            pass
+        try:
+            btn = page.get_by_role("button", name=re.compile(r"drop\s*[- ]?ins", re.I)).first
+            if btn.is_visible(timeout=3000):
+                btn.click()
+                time.sleep(3)
+                page.wait_for_load_state("networkidle", timeout=15000)
+                print("Clicked Drop ins (role button)")
+                return
+        except Exception:
+            pass
+        page.screenshot(path="debug_trumpington_drop_ins.png")
+        raise Exception("Could not find 'Drop ins' (tried Drop ins, Drop-ins, Make a Booking first)")
 
     def _select_club(self, page):
         """Select club 'Trumpington Sport' in the main content Clubs field (combobox)."""
