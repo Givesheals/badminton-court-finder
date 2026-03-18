@@ -24,6 +24,10 @@ When adding a **new** facility, check whether its booking site is one of these (
 3. **Registration**: Add the agent class to `scraper_manager.py` in `self.scrapers` with the exact facility name string (used by API and DB).
 4. **Database**: No schema change. `_get_or_create_facility()` and `_store_availability()` (delete existing rows for that facility, then insert) are the same for all.
 
+### Production: memory (~512 MB on Render)
+
+The API runs **one Gunicorn worker** on Render’s free tier (**~512 MB**). Each scrape holds a **Chromium** instance. **Do not** add code that launches many browsers at once in that process. Scheduled scrape-all runs venues **one after another**; if you add batch or parallel scraping elsewhere, keep parallelism **bounded** (see `SCRAPE_CONCURRENT_MAX_WORKERS` and [DEPLOYMENT.md](../DEPLOYMENT.md#render-memory-512-mb)).
+
 ---
 
 ## Lessons from Cherry Hinton (Better.org)

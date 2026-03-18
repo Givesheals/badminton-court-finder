@@ -57,7 +57,7 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 
 ┌─────────────────────────────────────────────┐
 │  GitHub Actions (every 6h)                  │
-│  Wake Render → POST /api/scrape-all         │
+│  Wake Render → POST /api/scrape-all (sequential) │
 └────────────┬────────────────────────────────┘
              │
              ▼
@@ -130,7 +130,18 @@ All scrapers use LLM extraction; you must set `OPENAI_API_KEY` on Render:
    - **Value:** your OpenAI API key (starts with `sk-...`). Use the same key you put in `.env` locally. Do not share it or commit it.
 4. **Save Changes**. Render will redeploy; the new variables apply after the deploy finishes.
 
-After deploy, scheduled scrape-all (and manual POST to `/api/scrape-all`) will scrape all four facilities using the agent (LLM) scrapers. To exclude a facility (e.g. temporarily), add its name to `EXCLUDE_SCRAPE_FACILITIES`.
+After deploy, scheduled scrape-all scrapes **all configured facilities** (except those in `EXCLUDE_SCRAPE_FACILITIES`) using the agent (LLM) scrapers, **one at a time**. To exclude a venue temporarily, add its name to `EXCLUDE_SCRAPE_FACILITIES`.
+
+## Render memory (~512 MB)
+
+The **free** Render web tier gives the API process on the order of **~512 MB RAM** (single instance; our Dockerfile uses **one Gunicorn worker**). **Playwright + Chromium is heavy**: each active scrape holds a full browser in that same process.
+
+**Code and ops should assume:**
+
+- **Do not** run “one browser per facility” in parallel on this stack— the OS will **SIGKILL** the worker (OOM), the service restarts, and scrapes fail mid-run (stale or missing “last updated” in the UI).
+- **Scheduled** scrape-all (GitHub Actions) calls `POST /api/scrape-all` **without** `concurrent=1`, so scrapes run **sequentially**. Wall-clock time is longer; memory stays safe.
+- **Manual** `POST /api/scrape-all?concurrent=1` uses a **bounded pool** (`SCRAPE_CONCURRENT_MAX_WORKERS`, default **2**). Increase only on a **larger Render plan** (or a dedicated scrape worker) after verifying headroom in metrics.
+- When adding facilities or heavier scrapers, prefer **sequential** orchestration or **few parallel browsers**, not unbounded concurrency.
 
 ## Render-Specific Notes
 
@@ -138,7 +149,8 @@ After deploy, scheduled scrape-all (and manual POST to `/api/scrape-all`) will s
 - Sleeps after 15 minutes of inactivity
 - Cold start takes 30-60 seconds on first request
 - 750 hours/month included (plenty for hobby projects)
-- Shared CPU/RAM (slower than Basic)
+- Shared CPU/RAM (**~512 MB** on the web service—see [Render memory (~512 MB)](#render-memory-512-mb) above)
+- Slower than Basic; upgrade if you need more RAM or always-on
 
 ### Basic Tier Benefits ($7/month)
 - Always-on (no sleep)
@@ -181,6 +193,7 @@ curl https://your-app-name.onrender.com/api/facility/Linton%20Village%20College/
 2. Verify environment variables are set
 3. Check database initialization
 4. Look for Python exceptions
+5. **OOM / “SIGKILL” / “Perhaps out of memory?”** — Usually too many **concurrent** Playwright scrapes. Ensure scheduled job does **not** use `?concurrent=1`; keep `SCRAPE_CONCURRENT_MAX_WORKERS` low (default 2). See [Render memory (~512 MB)](#render-memory-512-mb).
 
 ### Frontend Can't Connect to Backend
 1. Check CORS is enabled (already in app.py)

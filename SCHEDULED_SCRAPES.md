@@ -1,15 +1,16 @@
 # Scheduled scrapes (every 6 hours)
 
-Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). Three facilities are scraped by default (Linton Village College excluded due to bot protection). Set `EXCLUDE_SCRAPE_FACILITIES` to change which are skipped.
+Scrapers run automatically every 6 hours (00:00, 06:00, 12:00, 18:00 UTC). **Each run scrapes every configured facility except** those listed in `EXCLUDE_SCRAPE_FACILITIES` (default skips **Linton Village College** due to bot protection). Runs are **sequential** (one facility at a time) so the Render host does not run out of memory—see [Render memory (~512 MB)](DEPLOYMENT.md#render-memory-512-mb).
 
 **Deploy first:** Push this code and let Render redeploy so the `/api/scrape-all` endpoint is live. Then set up scheduled scrapes using GitHub Actions (see below).
 
 ## How it works
 
-- **Endpoint:** `POST /api/scrape-all` on your Render web service.
-- **Behaviour:** Starts a background thread that scrapes every facility **except** those in `EXCLUDE_SCRAPE_FACILITIES`. Returns `202 Accepted` immediately so the caller does not time out.
-- **Excluded by default:** Linton Village College (bot protection returns 403). Set `EXCLUDE_SCRAPE_FACILITIES` to empty to include it, or add other names to skip.
-- **Included by default:** Hill Roads Sport and Tennis Centre, One Leisure St Ives, Trumpington Sport.
+- **Endpoint:** `POST /api/scrape-all` on your Render web service (no query params for the scheduled job).
+- **Behaviour:** Starts a background thread that scrapes each facility **except** those in `EXCLUDE_SCRAPE_FACILITIES`, **one after another**, with a delay between facilities (`SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS`, default 1s locally; set higher on Render if sites rate-limit). Returns `202 Accepted` immediately so the caller does not time out.
+- **Why sequential:** The API runs on a **single Gunicorn worker** with **~512 MB RAM** on Render’s free tier. Each scrape launches **Chromium (Playwright)**. Running many scrapers **at once** exhausts RAM (OOM → process killed → stale data). Scheduled runs therefore **must not** use `?concurrent=1`.
+- **Manual concurrent scrape-all:** `POST /api/scrape-all?concurrent=1` (or JSON `{"concurrent": true}`) uses a **small thread pool** capped by `SCRAPE_CONCURRENT_MAX_WORKERS` (default **2**), not one thread per facility. Only raise the cap on a larger instance.
+- **Excluded by default:** Linton Village College. Set `EXCLUDE_SCRAPE_FACILITIES` to empty to include it, or add names to skip more venues.
 
 ## Schedule (every 6 hours)
 
@@ -39,9 +40,9 @@ The repo uses a workflow that **wakes Render** (GET `/health`), **waits 90 secon
 1. Workflow runs at 00:00, 06:00, 12:00, 18:00 UTC.
 2. **Wake:** GET `RENDER_APP_URL/health` (wakes Render if it was sleeping).
 3. **Wait:** 90 seconds so the next request hits a warm instance.
-4. **Trigger:** POST `RENDER_APP_URL/api/scrape-all` with `Content-Type: application/json`; expect `202 Accepted`. The job fails if the response is not 202 (e.g. 503 if Render did not wake in time).
+4. **Trigger:** POST `RENDER_APP_URL/api/scrape-all` (sequential) with `Content-Type: application/json`; expect `202 Accepted`. The job fails if the response is not 202 (e.g. 503 if Render did not wake in time).
 
-Scrapes run in the background on Render after the 202; the workflow only ensures the trigger was accepted.
+Scrapes then run **in series** in the background (may take a long wall-clock time); the workflow only checks that the trigger was accepted.
 
 **Testing Linton from Render (if your IP is blocked):** Run a one-off scrape on Render: `curl --max-time 900 -X POST https://badminton-court-finder.onrender.com/api/scrape -H "Content-Type: application/json" -d '{"facility":"Linton Village College"}'`. Ensure `LVC_USERNAME` and `LVC_PASSWORD` are set in Render → Environment. Check Render Logs for scraper output.
 
@@ -60,11 +61,13 @@ Render Cron Jobs can run a command on a schedule. There is a **minimum $1/month*
 
 ---
 
-## Environment variable
+## Environment variables (Render / API)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `EXCLUDE_SCRAPE_FACILITIES` | `Linton Village College` | Comma-separated facility names to skip in scrape-all (Linton excluded due to bot protection). Set to empty to scrape all four. |
+| `EXCLUDE_SCRAPE_FACILITIES` | `Linton Village College` | Comma-separated facility names to skip in scrape-all. |
+| `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS` | `1` (raise on Render if needed) | Pause between facilities in **sequential** scrape-all. |
+| `SCRAPE_CONCURRENT_MAX_WORKERS` | `2` | Only for `?concurrent=1`: max parallel browser scrapes. Keep low on ~512 MB hosts. |
 
 ---
 
@@ -77,4 +80,4 @@ curl -X POST https://badminton-court-finder.onrender.com/api/scrape-all \
   -H "Content-Type: application/json"
 ```
 
-You should get `202 Accepted` and a JSON body with `"status": "accepted"` and the list of facilities being scraped. Check your Render **Logs** for “Scheduled scrape started for: …” and “Scheduled scrape … success=…”.
+You should get `202 Accepted` and a JSON body with `"status": "accepted"` and the list of facilities. Check Render **Logs** for sequential lines like `Scheduled scrape started for: …`, per-facility results, and finally `Scheduled scrape run finished.`

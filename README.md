@@ -11,7 +11,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Streamlit on [Streamlit Community Cloud](https://share.streamlit.io) at [court-finder.streamlit.app](https://court-finder.streamlit.app). Root `requirements.txt` is minimal (streamlit + requests) for Cloud; backend/local use `requirements-backend.txt`.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: GitHub Actions triggers `/api/scrape-all` every 6 hours (00:00, 06:00, 12:00, 18:00 UTC) after waking Render. Three facilities are scraped by default (Linton excluded due to bot protection); see `EXCLUDE_SCRAPE_FACILITIES`. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md).
+- **Scheduled scrapes**: GitHub Actions triggers **`/api/scrape-all` sequentially** (one venue at a time) every 6 hours after waking Render—required because the Render API runs with **~512 MB RAM** and each scrape uses Chromium. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [DEPLOYMENT.md — memory](DEPLOYMENT.md#render-memory-512-mb). Linton is excluded by default (`EXCLUDE_SCRAPE_FACILITIES`).
 
 ## Documentation
 
@@ -26,7 +26,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 
 ## Features
 
-- **Scheduled scraping**: All facilities (except excluded) scraped every 6 hours via GitHub Actions
+- **Scheduled scraping**: All facilities (except excluded) scraped **in sequence** every 6 hours via GitHub Actions (avoids OOM on small Render instances)
 - **Hybrid caching**: Uses DB cache; scrapes triggered by schedule or manual POST
 - **Find Available Courts**: Button only reads from the database (no scrape); results should load in seconds
 - **Budget-safe**: Rate limiting and daily scrape limits prevent runaway costs
@@ -114,7 +114,7 @@ Body: {"facility": "Hill Roads Sport and Tennis Centre"}
 ```
 POST /api/scrape-all
 ```
-Starts background scrapes for all facilities except those in `EXCLUDE_SCRAPE_FACILITIES`. Returns 202 Accepted. Triggered every 6 hours by the GitHub Actions scheduled workflow.
+Starts **sequential** background scrapes (one facility at a time) for all except `EXCLUDE_SCRAPE_FACILITIES`. Returns 202 immediately. The scheduled workflow uses this mode. Optional: `?concurrent=1` runs a **capped** parallel pool—see [DEPLOYMENT.md](DEPLOYMENT.md#render-memory-512-mb).
 
 ### Facility stats
 ```
@@ -126,6 +126,7 @@ GET /api/facility/<facility_name>/stats
 Environment variables:
 - `DATABASE_URL`: PostgreSQL connection URL (e.g. Neon). If set, app uses Postgres; otherwise SQLite (local).
 - `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: Linton Village College, due to bot protection).
+- `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS` / `SCRAPE_CONCURRENT_MAX_WORKERS`: See [DEPLOYMENT.md](DEPLOYMENT.md#render-memory-512-mb) (memory-aware scraping on Render).
 - `MAX_SCRAPES_PER_DAY`: Maximum scrapes per facility per day (default: 3)
 - `MAX_SCRAPES_PER_HOUR`: Maximum scrapes per facility per hour (default: 1)
 - `MIN_CACHE_AGE_SECONDS`: Minimum cache age before re-scraping (default: 3600 = 1 hour)
