@@ -91,6 +91,7 @@ Deploy the Streamlit app so the main UI is live. **See [STREAMLIT_DEPLOY.md](STR
 ### Optional (with defaults)
 - `EXCLUDE_SCRAPE_FACILITIES`: Comma-separated facility names to skip in scrape-all (default: Linton Village College, due to bot protection).
 - `SCRAPE_DELAY_BETWEEN_FACILITIES_SECONDS`: Seconds to wait between facilities in scrape-all (default: 120). Reduces risk of being blocked by sites.
+- `SCRAPE_CONCURRENT_MAX_WORKERS`: For **concurrent** scrape-all only (`?concurrent=1`): max parallel Playwright scrapes (default: **2**). Avoid raising on small Render instances (OOM risk).
 - `FLASK_DEBUG`: False
 - `MAX_SCRAPES_PER_DAY`: 3
 - `MAX_SCRAPES_PER_HOUR`: 1

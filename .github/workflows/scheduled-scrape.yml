@@ -22,11 +22,12 @@ jobs:
       - name: Wait for cold start
         run: sleep 90
 
+      # Sequential scrape-all (one facility at a time) — avoids OOM from many Playwright browsers at once.
       - name: Trigger scrape-all
         id: scrape
         run: |
           resp=$(curl -s -w "\n%{http_code}" --max-time 120 \
-            -X POST "${{ secrets.RENDER_APP_URL }}/api/scrape-all?concurrent=1" \
+            -X POST "${{ secrets.RENDER_APP_URL }}/api/scrape-all" \
             -H "Content-Type: application/json")
           body=$(echo "$resp" | head -n -1)
           code=$(echo "$resp" | tail -n 1)

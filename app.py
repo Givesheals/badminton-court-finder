@@ -53,7 +53,10 @@ def _run_scheduled_scrapes():
 
 
 def _run_scheduled_scrapes_concurrent():
-    """Background: scrape all facilities concurrently (one thread per facility, each with its own ScraperManager)."""
+    """Background: scrape facilities with a bounded thread pool (each thread: own ScraperManager + browser).
+
+    Max concurrent browsers is capped (default 2 via SCRAPE_CONCURRENT_MAX_WORKERS) to avoid OOM on small hosts.
+    """
     excluded = set(
         name.strip() for name in
         os.getenv('EXCLUDE_SCRAPE_FACILITIES', 'Linton Village College').split(',')
@@ -70,7 +73,17 @@ def _run_scheduled_scrapes_concurrent():
     if not facilities:
         logger.info("No facilities to scrape (all excluded or none configured).")
         return
-    logger.info(f"Concurrent scrape started for: {facilities}")
+    try:
+        worker_cap = int(os.getenv("SCRAPE_CONCURRENT_MAX_WORKERS", "2"))
+    except ValueError:
+        worker_cap = 2
+    worker_cap = max(1, worker_cap)
+    max_workers = min(len(facilities), worker_cap)
+    logger.info(
+        "Concurrent scrape started for: %s (max_workers=%s, cap from SCRAPE_CONCURRENT_MAX_WORKERS)",
+        facilities,
+        max_workers,
+    )
 
     def scrape_one(name):
         sm_one = ScraperManager()
@@ -80,7 +93,7 @@ def _run_scheduled_scrapes_concurrent():
         finally:
             sm_one.close()
 
-    with ThreadPoolExecutor(max_workers=len(facilities)) as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(scrape_one, name): name for name in facilities}
         for future in as_completed(futures):
             name = futures[future]
@@ -164,7 +177,7 @@ def get_facilities():
 @app.route('/api/scrape-all', methods=['POST'])
 def trigger_scrape_all():
     """Trigger scrapes for all facilities except EXCLUDE_SCRAPE_FACILITIES (e.g. broken scrapers). Runs in background; returns 202.
-    Use ?concurrent=1 or JSON body {"concurrent": true} to run all scrapers concurrently instead of sequentially with delay."""
+    Use ?concurrent=1 or JSON body {"concurrent": true} to run with a bounded thread pool (SCRAPE_CONCURRENT_MAX_WORKERS, default 2) instead of sequential."""
     excluded = set(EXCLUDE_SCRAPE_FACILITIES)
     try:
         sm = ScraperManager(engine=db_engine)
