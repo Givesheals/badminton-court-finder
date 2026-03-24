@@ -11,7 +11,7 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 - **Frontend**: Streamlit on [Streamlit Community Cloud](https://share.streamlit.io) at [court-finder.streamlit.app](https://court-finder.streamlit.app). Root `requirements.txt` is minimal (streamlit + requests) for Cloud; backend/local use `requirements-backend.txt`.
 - **Backend**: Flask API on Render (Docker)
 - **Database**: Neon PostgreSQL (production); SQLite (local dev). Data persists across deploys.
-- **Scheduled scrapes**: GitHub Actions triggers **`/api/scrape-all` sequentially** (one venue at a time) every 6 hours after waking Render—required because the Render API runs with **~512 MB RAM** and each scrape uses Chromium. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [DEPLOYMENT.md — memory](DEPLOYMENT.md#render-memory-512-mb). Linton is excluded by default (`EXCLUDE_SCRAPE_FACILITIES`).
+- **Scheduled scrapes**: GitHub Actions triggers **`/api/scrape-all` sequentially** (one venue at a time) **three times daily** (00:00, 12:00, 18:00 UTC) after waking Render—required because the Render API runs with **~512 MB RAM** and each scrape uses Chromium. See [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) and [DEPLOYMENT.md — memory](DEPLOYMENT.md#render-memory-512-mb). Linton is excluded by default (`EXCLUDE_SCRAPE_FACILITIES`).
 
 ## Documentation
 
@@ -22,11 +22,11 @@ A web app to find available badminton courts in Cambridge by aggregating availab
 | [DEPLOY_CHECKLIST.md](DEPLOY_CHECKLIST.md) | Render + frontend deployment checklist |
 | [DEPLOY_INSTRUCTIONS.md](DEPLOY_INSTRUCTIONS.md) | Detailed step-by-step deployment walkthrough |
 | [STREAMLIT_DEPLOY.md](STREAMLIT_DEPLOY.md) | Deploy Streamlit app to Community Cloud |
-| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | How 6-hour scrapes work (GitHub Actions) |
+| [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md) | Scheduled scrapes (GitHub Actions, 3× daily) |
 
 ## Features
 
-- **Scheduled scraping**: All facilities (except excluded) scraped **in sequence** every 6 hours via GitHub Actions (avoids OOM on small Render instances)
+- **Scheduled scraping**: All facilities (except excluded) scraped **in sequence** three times daily via GitHub Actions (avoids OOM on small Render instances)
 - **Hybrid caching**: Uses DB cache; scrapes triggered by schedule or manual POST
 - **Find Available Courts**: Button only reads from the database (no scrape); results should load in seconds
 - **Budget-safe**: Rate limiting and daily scrape limits prevent runaway costs
@@ -157,9 +157,9 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for architecture and env vars.
 
 Use Neon (free, persistent) or another Postgres. Set `DATABASE_URL` on Render to the connection URL. See [FREE_DB_ALTERNATIVES.md](FREE_DB_ALTERNATIVES.md).
 
-### Scheduled scrapes (every 6 hours)
+### Scheduled scrapes (three times daily)
 
-Use the GitHub Actions workflow (see [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md)) to trigger `POST /api/scrape-all` every 6 hours after waking Render. Set the `RENDER_APP_URL` repo secret to your Render URL.
+Use the GitHub Actions workflow (see [SCHEDULED_SCRAPES.md](SCHEDULED_SCRAPES.md)) to trigger `POST /api/scrape-all` three times daily (00:00, 12:00, 18:00 UTC) after waking Render. Set the `RENDER_APP_URL` repo secret to your Render URL.
 
 ### Frontend (Streamlit – primary)
 
@@ -210,7 +210,7 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 ├── DEPLOY_CHECKLIST.md     # Render + frontend deployment checklist
 ├── DEPLOY_INSTRUCTIONS.md  # Detailed step-by-step deployment walkthrough
 ├── STREAMLIT_DEPLOY.md     # Deploy Streamlit to Community Cloud
-├── SCHEDULED_SCRAPES.md    # Every-6h scrapes: overview and options
+├── SCHEDULED_SCRAPES.md    # Scheduled scrapes: overview and options
 ├── FREE_DB_ALTERNATIVES.md # Neon / Supabase (persistent free DB)
 └── RENDER_POSTGRES_SETUP.md # Render Postgres (time-limited free)
 ```
@@ -220,4 +220,4 @@ docker run -p 5000:5000 --env-file .env badminton-court-finder
 1. Create a new scraper in `scrapers/` (e.g. follow `hill_roads.py` or `one_leisure_st_ives.py`).
 2. Register it in `scraper_manager.py` in the `scrapers` dict.
 3. Add the facility’s booking URL to `FACILITY_BOOKING_URLS` in `streamlit_app.py`.
-4. Deploy. The new facility is included in the next scheduled scrape-all (every 6 hours); no scheduler changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).
+4. Deploy. The new facility is included in the next scheduled scrape-all (three times daily); no scheduler changes needed. To exclude it (e.g. if broken), add its name to `EXCLUDE_SCRAPE_FACILITIES` (env var, comma-separated).

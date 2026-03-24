@@ -8,7 +8,7 @@ A web app that aggregates badminton court availability across Cambridge faciliti
 - **Backend**: Flask API (`app.py`) on Render (Docker). Same API serves both UIs.
 - **Database**: Neon PostgreSQL (production); SQLite (local). SQLAlchemy in `database.py`.
 - **Scraping**: Playwright per-venue scrapers in `scrapers/`; all use **LLM extraction** via OpenAI (`scrapers/llm_extract.py`, `*_agent_scraper.py`).
-- **Deployment**: Render (backend, **~512 MB RAM** on free tier). GitHub Actions triggers **sequential** `/api/scrape-all` every 6 hours. Do not schedule concurrent scrape-all—OOM risk. See [DEPLOYMENT.md](../DEPLOYMENT.md#render-memory-512-mb).
+- **Deployment**: Render (backend, **~512 MB RAM** on free tier). GitHub Actions triggers **sequential** `/api/scrape-all` three times daily (00:00, 12:00, 18:00 UTC). Do not schedule concurrent scrape-all—OOM risk. See [DEPLOYMENT.md](../DEPLOYMENT.md#render-memory-512-mb).
 
 ## For New Developers (e.g. Martin)
 **Start here:** [GETTING_STARTED.md](../GETTING_STARTED.md) – clone, `.env` (copy from `.env.example`), `pip install -r requirements-backend.txt`, `playwright install chromium`, run `app.py` then `streamlit run streamlit_app.py`. Optional: [DEPLOYMENT.md](../DEPLOYMENT.md) for Render and agent (OpenAI) setup.

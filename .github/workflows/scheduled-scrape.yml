@@ -1,4 +1,4 @@
-# Scheduled scrapes: wake Render, then POST /api/scrape-all every 6 hours.
+# Scheduled scrapes: wake Render, then POST /api/scrape-all three times daily (00:00, 12:00, 18:00 UTC).
 # No keep-awake needed; Render can spin down between runs.
 # One-time setup: add repo secret RENDER_APP_URL = https://badminton-court-finder.onrender.com
 
@@ -6,7 +6,7 @@ name: Scheduled scrape
 
 on:
   schedule:
-    - cron: '0 0,6,12,18 * * *'  # 00:00, 06:00, 12:00, 18:00 UTC
+    - cron: '0 0,12,18 * * *'  # 00:00, 12:00, 18:00 UTC
   workflow_dispatch:  # Allow manual run from Actions tab
 
 jobs:
