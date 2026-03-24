@@ -16,7 +16,6 @@ from scrapers.one_leisure_st_ives import OneLeisureStIvesScraper
 from scrapers.one_leisure_st_neots import OneLeisureStNeotsScraper
 from scrapers.one_leisure_huntingdon import OneLeisureHuntingdonScraper
 from scrapers.one_leisure_ramsey import OneLeisureRamseyScraper
-from scrapers.one_leisure_sawtry import OneLeisureSawtryScraper
 from scrapers.llm_extract import extract_availability_from_page
 
 
@@ -78,12 +77,6 @@ class OneLeisureHuntingdonAgentScraper(OneLeisureAgentMixin, OneLeisureHuntingdo
 
 class OneLeisureRamseyAgentScraper(OneLeisureAgentMixin, OneLeisureRamseyScraper):
     """Agent-based scraper for One Leisure Ramsey."""
-
-    pass
-
-
-class OneLeisureSawtryAgentScraper(OneLeisureAgentMixin, OneLeisureSawtryScraper):
-    """Agent-based scraper for One Leisure Sawtry."""
 
     pass
 

@@ -5,7 +5,7 @@ These tests verify that:
 - All facilities use agent scraper classes (no fixed-selector at runtime).
 - Linton Village College is excluded by default from scheduled scrape-all (bot protection).
 - Scrape-all includes the four non-excluded facilities when using default config.
-- API exposes all five facilities (front-end data path).
+- API exposes the expected facilities (front-end data path).
 """
 
 import os
@@ -21,7 +21,6 @@ EXPECTED_FACILITIES = {
     "One Leisure St Neots",
     "One Leisure Huntingdon",
     "One Leisure Ramsey",
-    "One Leisure Sawtry",
     "Trumpington Sport",
     "Cherry Hinton Leisure Centre",
 }
@@ -38,7 +37,6 @@ def test_a_all_scrapers_are_agent_classes():
         OneLeisureStNeotsAgentScraper,
         OneLeisureHuntingdonAgentScraper,
         OneLeisureRamseyAgentScraper,
-        OneLeisureSawtryAgentScraper,
     )
     from scrapers.trumpington_agent_scraper import TrumpingtonAgentScraper
 
@@ -51,7 +49,6 @@ def test_a_all_scrapers_are_agent_classes():
         OneLeisureStNeotsAgentScraper,
         OneLeisureHuntingdonAgentScraper,
         OneLeisureRamseyAgentScraper,
-        OneLeisureSawtryAgentScraper,
         TrumpingtonAgentScraper,
     }
     for name, scraper_class in sm.scrapers.items():

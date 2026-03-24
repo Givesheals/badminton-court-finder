@@ -14,13 +14,15 @@ from scrapers.one_leisure_agent_scraper import (
     OneLeisureStNeotsAgentScraper,
     OneLeisureHuntingdonAgentScraper,
     OneLeisureRamseyAgentScraper,
-    OneLeisureSawtryAgentScraper,
 )
 from scrapers.trumpington_agent_scraper import TrumpingtonAgentScraper
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# No longer bookable / not offered; may still exist as Facility rows — omit from API and UI.
+RETIRED_FACILITIES = frozenset({"One Leisure Sawtry"})
 
 
 class ScraperManager:
@@ -48,7 +50,6 @@ class ScraperManager:
             'One Leisure St Neots': OneLeisureStNeotsAgentScraper,
             'One Leisure Huntingdon': OneLeisureHuntingdonAgentScraper,
             'One Leisure Ramsey': OneLeisureRamseyAgentScraper,
-            'One Leisure Sawtry': OneLeisureSawtryAgentScraper,
             'Trumpington Sport': TrumpingtonAgentScraper,
         }
     
@@ -234,7 +235,7 @@ class ScraperManager:
         """Return facility names from scrapers and DB so all known facilities appear (e.g. after new scraper added)."""
         from_scrapers = set(self.scrapers.keys())
         from_db = {f.name for f in self.session.query(Facility).all()}
-        return sorted(from_scrapers | from_db)
+        return sorted((from_scrapers | from_db) - RETIRED_FACILITIES)
 
     def scrape_one_leisure_sequence(self):
         """Helper to scrape all One Leisure facilities sequentially.
@@ -247,7 +248,6 @@ class ScraperManager:
             "One Leisure St Neots",
             "One Leisure Huntingdon",
             "One Leisure Ramsey",
-            "One Leisure Sawtry",
         ]
         results = {}
         for name in one_leisure_names:

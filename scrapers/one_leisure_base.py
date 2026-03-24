@@ -7,7 +7,7 @@ This module contains a configurable Playwright/DB base class that knows how to:
 - Loop over the 14-day booking window
 - Store availability records in the database for a single Facility.
 
-Facility-specific scrapers (St Ives, St Neots, Huntingdon, Ramsey, Sawtry, etc.)
+Facility-specific scrapers (St Ives, St Neots, Huntingdon, Ramsey, etc.)
 should subclass `OneLeisureBaseScraper` and provide a small config describing:
 - facility_name (DB/manager key)
 - where_value (primary label for the Where dropdown)

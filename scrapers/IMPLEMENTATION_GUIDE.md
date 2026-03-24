@@ -9,7 +9,7 @@ This document summarises what we've learned building facility scrapers—especia
 | Platform / product | Venues in this project | Notes |
 |--------------------|------------------------|--------|
 | **Legend** (Legend Online Services) | Hill Roads, Trumpington Sport (Abbeycroft) | Same UI: login → Drop ins → club → Court bookings → Badminton → timetable. Red X = booked, green arrow / "N Slots" = bookable. |
-| **GladstoneGo** (Gladstone Go) | One Leisure St Ives, One Leisure St Neots, One Leisure Huntingdon, One Leisure Ramsey, One Leisure Sawtry | SPA: /book, filters (Where / What / date / Starting from), "See available spaces" → timetable. "Book now" = available. All One Leisure venues share this platform and use a shared base scraper. |
+| **GladstoneGo** (Gladstone Go) | One Leisure St Ives, One Leisure St Neots, One Leisure Huntingdon, One Leisure Ramsey | SPA: /book, filters (Where / What / date / Starting from), "See available spaces" → timetable. "Book now" = available. All One Leisure venues share this platform and use a shared base scraper. |
 | **Better.org** | Cherry Hinton Leisure Centre | No login. Location URL → activity list (e.g. "Badminton 60min") → day tabs → availability at bottom. Cookie consent on first load. |
 | **Anglian Leisure** (gs-signature) | Linton Village College | Strong bot protection (403). Use sparingly; exclude from frequent scheduled scrapes. |
 
@@ -119,7 +119,6 @@ When something fails (e.g. “no day tab found”), save a screenshot so you can
 | `scrapers/one_leisure_st_neots.py` | One Leisure St Neots scraper built on `OneLeisureBaseScraper`. |
 | `scrapers/one_leisure_huntingdon.py` | One Leisure Huntingdon scraper built on `OneLeisureBaseScraper`. |
 | `scrapers/one_leisure_ramsey.py` | One Leisure Ramsey scraper built on `OneLeisureBaseScraper`. |
-| `scrapers/one_leisure_sawtry.py` | One Leisure Sawtry scraper built on `OneLeisureBaseScraper`. |
 | `scraper_manager.py` | Where to register new scrapers and facility names. |
 | `test_cherry_hinton.py` | Example tests: SCRAPE_DAYS range, distinct dates stored, slot structure, integration with _store_availability. |
 
